@@ -1,0 +1,1492 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>销售部升职考核追踪系统</title>
+<style>
+  :root {
+    --primary: #2c3e50;
+    --accent: #e74c3c;
+    --gold: #f39c12;
+    --green: #27ae60;
+    --blue: #2980b9;
+    --light: #ecf0f1;
+    --pass: #d5f5e3;
+    --fail: #fadbd8;
+    --partial: #fef9e7;
+    --bg: #f8f9fa;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--primary); }
+  
+  header {
+    background: linear-gradient(135deg, var(--primary) 0%, #34495e 100%);
+    color: white;
+    padding: 20px 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  }
+  header h1 { font-size: 22px; letter-spacing: 1px; }
+  header .subtitle { font-size: 13px; opacity: 0.75; margin-top: 4px; }
+  
+  .toolbar {
+    background: white;
+    padding: 14px 30px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+    border-bottom: 1px solid #ddd;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .toolbar label { font-size: 13px; font-weight: 600; color: #555; }
+  .toolbar select, .toolbar input[type=number] {
+    border: 1px solid #ccc; border-radius: 6px; padding: 6px 10px;
+    font-size: 13px; color: var(--primary);
+  }
+  .btn {
+    padding: 7px 18px; border-radius: 6px; border: none; cursor: pointer;
+    font-size: 13px; font-weight: 600; transition: all 0.2s;
+  }
+  .btn-primary { background: var(--blue); color: white; }
+  .btn-primary:hover { background: #1a6fa3; }
+  .btn-success { background: var(--green); color: white; }
+  .btn-success:hover { background: #1e8449; }
+  .btn-warn { background: var(--gold); color: white; }
+  .btn-warn:hover { background: #d68910; }
+  .btn-danger { background: var(--accent); color: white; }
+  .btn-danger:hover { background: #c0392b; }
+  
+  .criteria-box {
+    background: white; margin: 16px 30px 0; padding: 14px 20px;
+    border-radius: 10px; border-left: 4px solid var(--gold);
+    box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+    font-size: 13px; color: #444; line-height: 2;
+  }
+  .criteria-box strong { color: var(--primary); }
+  .criteria-tags { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+  .tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
+  }
+  .tag-c1 { background: #d6eaf8; color: #1a5276; }
+  .tag-c2 { background: #d5f5e3; color: #1d6a47; }
+  .tag-c3 { background: #fdebd0; color: #784212; }
+  .tag-promo { background: #fdf2f8; color: #7d3c98; }
+
+  .main-content { padding: 20px 30px 40px; }
+  
+  .view-tabs {
+    display: flex; gap: 0; margin-bottom: 20px;
+    border-bottom: 2px solid #ddd;
+  }
+  .view-tab {
+    padding: 10px 22px; cursor: pointer; font-size: 14px;
+    border: none; background: none; color: #888;
+    border-bottom: 3px solid transparent; margin-bottom: -2px;
+    font-weight: 600; transition: all 0.2s;
+  }
+  .view-tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+  .view-tab:hover:not(.active) { color: var(--primary); }
+  
+  .view-panel { display: none; }
+  .view-panel.active { display: block; }
+
+  /* 进度总览卡片 */
+  .cards-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+  }
+  .person-card {
+    background: white; border-radius: 12px; padding: 18px 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.07); border: 2px solid transparent;
+    transition: all 0.2s; cursor: default;
+  }
+  .person-card:hover { transform: translateY(-2px); box-shadow: 0 4px 18px rgba(0,0,0,0.12); }
+  .person-card.promo-ready { border-color: #f39c12; background: linear-gradient(135deg, #fff 80%, #fef9e7); }
+  .person-card.promo-close { border-color: #27ae60; }
+  
+  .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+  .card-name { font-size: 18px; font-weight: 700; }
+  .card-badge {
+    font-size: 11px; padding: 3px 10px; border-radius: 12px; font-weight: 700;
+  }
+  .badge-ready { background: var(--gold); color: white; }
+  .badge-close { background: var(--green); color: white; }
+  .badge-progress { background: #aab7b8; color: white; }
+  
+  .month-row { display: flex; gap: 6px; margin-bottom: 12px; }
+  .month-chip {
+    flex: 1; text-align: center; padding: 6px 4px; border-radius: 8px;
+    font-size: 11px; border: 1px solid #eee;
+  }
+  .month-chip .m-label { font-weight: 600; color: #666; margin-bottom: 3px; }
+  .month-chip .m-score {
+    font-size: 18px; font-weight: 800; line-height: 1;
+  }
+  .month-chip .m-detail { font-size: 10px; color: #888; margin-top: 3px; }
+  .chip-full { background: #d5f5e3; border-color: #27ae60; }
+  .chip-partial { background: #fef9e7; border-color: #f39c12; }
+  .chip-none { background: #fdfefe; border-color: #ddd; }
+  .chip-na { background: #f8f9fa; border-color: #eee; color: #bbb; }
+
+  /* 大进度条 */
+  .promo-progress-wrap { margin-top: 10px; }
+  .promo-progress-label {
+    display: flex; justify-content: space-between;
+    font-size: 12px; color: #666; margin-bottom: 5px;
+  }
+  .promo-bar-bg {
+    background: #ecf0f1; border-radius: 8px; height: 14px; overflow: hidden;
+  }
+  .promo-bar-fill {
+    height: 100%; border-radius: 8px; transition: width 0.6s ease;
+    background: linear-gradient(90deg, #27ae60, #2ecc71);
+  }
+  .promo-bar-fill.mid { background: linear-gradient(90deg, #f39c12, #f1c40f); }
+  .promo-bar-fill.low { background: linear-gradient(90deg, #e74c3c, #ec7063); }
+  
+  .gap-hints { margin-top: 8px; font-size: 11px; color: #777; line-height: 1.8; }
+  .gap-hints .gap-item { display: flex; align-items: center; gap: 6px; }
+  .gap-icon { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+  .gap-icon.g-pass { background: var(--green); }
+  .gap-icon.g-fail { background: #e74c3c; }
+  .gap-icon.g-warn { background: var(--gold); }
+
+  /* 月度详情表 */
+  .month-table-wrap { overflow-x: auto; }
+  table.data-table {
+    width: 100%; border-collapse: collapse; font-size: 13px;
+    background: white; border-radius: 10px; overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+  }
+  .data-table th {
+    background: var(--primary); color: white;
+    padding: 10px 12px; text-align: center; font-size: 12px;
+    white-space: nowrap;
+  }
+  .data-table td {
+    padding: 8px 12px; text-align: center; border-bottom: 1px solid #f0f0f0;
+    white-space: nowrap;
+  }
+  .data-table tr:hover td { background: #f8f9fa; }
+  .data-table td.name-col { font-weight: 700; text-align: left; }
+  .data-table td.rank-col { font-weight: 700; font-size: 15px; }
+  
+  .pass-cell { background: #d5f5e3; color: #1d6a47; font-weight: 700; border-radius: 4px; padding: 2px 6px; }
+  .fail-cell { background: #fadbd8; color: #922b21; border-radius: 4px; padding: 2px 6px; }
+  .warn-cell { background: #fef9e7; color: #784212; border-radius: 4px; padding: 2px 6px; }
+
+  .rank-1 { color: #c0392b; }
+  .rank-2 { color: #e67e22; }
+  .rank-3 { color: #f39c12; }
+  .rank-4 { color: #27ae60; }
+
+  /* 编辑面板 */
+  .edit-panel {
+    background: white; border-radius: 12px; padding: 24px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.07); margin-bottom: 20px;
+  }
+  .edit-panel h3 { font-size: 16px; margin-bottom: 16px; color: var(--primary); }
+  .edit-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  .edit-field label { font-size: 12px; color: #666; display: block; margin-bottom: 4px; }
+  .edit-field input, .edit-field select {
+    width: 100%; padding: 7px 10px; border: 1px solid #ddd; border-radius: 6px;
+    font-size: 13px;
+  }
+  .edit-row-header {
+    display: flex; gap: 12px; align-items: center; margin-bottom: 12px;
+    padding-bottom: 12px; border-bottom: 1px solid #eee;
+  }
+  .edit-row-header select {
+    padding: 7px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;
+  }
+  
+  .notice-bar {
+    background: #d6eaf8; color: #1a5276; padding: 10px 16px;
+    border-radius: 8px; font-size: 13px; margin-bottom: 16px;
+    border-left: 4px solid #2980b9;
+  }
+
+  /* 连续窗口说明 */
+  .window-info {
+    background: white; border-radius: 10px; padding: 16px 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 20px;
+    font-size: 13px; color: #444;
+  }
+  .window-info h4 { margin-bottom: 10px; color: var(--primary); }
+  .window-list { display: flex; gap: 10px; flex-wrap: wrap; }
+  .window-item {
+    padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    border: 2px solid #ddd; color: #666; cursor: pointer; transition: all 0.2s;
+  }
+  .window-item.active-window { border-color: var(--blue); background: #d6eaf8; color: var(--blue); }
+  
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: #666; margin-top: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+  
+  .section-title {
+    font-size: 15px; font-weight: 700; color: var(--primary);
+    margin: 0 0 14px; padding-bottom: 8px; border-bottom: 2px solid #eee;
+  }
+
+  .crown { font-size: 16px; }
+  
+  /* ===== 微信提示遮罩 ===== */
+  #wechat-mask {
+    display: none;
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(0,0,0,0.85);
+    flex-direction: column;
+    align-items: center; justify-content: flex-start;
+    padding-top: 60px;
+  }
+  #wechat-mask.show { display: flex; }
+  .wechat-arrow {
+    position: absolute; top: 12px; right: 20px;
+    font-size: 52px; color: #fff; animation: bounce 1s infinite;
+  }
+  @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+  .wechat-tip-box {
+    background: white; border-radius: 16px; padding: 30px 28px;
+    max-width: 300px; text-align: center;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+  }
+  .wechat-tip-box .tip-icon { font-size: 48px; margin-bottom: 12px; }
+  .wechat-tip-box h2 { font-size: 18px; color: #2c3e50; margin-bottom: 10px; }
+  .wechat-tip-box p { font-size: 14px; color: #666; line-height: 1.7; }
+  .wechat-tip-box .tip-step {
+    background: #f0f4ff; border-radius: 10px; padding: 12px 16px;
+    margin-top: 16px; text-align: left; font-size: 13px; color: #333; line-height: 2;
+  }
+
+  /* ===== 移动端全面适配 ===== */
+  @media (max-width: 768px) {
+    header {
+      padding: 12px 14px;
+      flex-direction: column; align-items: flex-start; gap: 4px;
+    }
+    header h1 { font-size: 16px; }
+    header .subtitle { font-size: 11px; }
+    header > div:last-child { font-size: 11px; align-self: flex-end; margin-top: -20px; }
+
+    .toolbar {
+      padding: 8px 12px; gap: 8px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+    .toolbar label { display: none; }
+    .toolbar select { font-size: 12px; padding: 5px 8px; grid-column: 1/3; }
+    .toolbar span { display: none; }
+    .toolbar > div[style*="flex:1"] { display: none; }
+    .toolbar .btn { font-size: 12px; padding: 6px 10px; }
+    #adminBtn, #exportBtn { grid-column: span 1; }
+
+    .criteria-box { margin: 10px 12px 0; padding: 10px 14px; font-size: 12px; }
+    .criteria-tags { gap: 6px; }
+    .tag { font-size: 11px; padding: 3px 9px; }
+
+    .main-content { padding: 10px 12px 30px; }
+
+    /* 卡片单列 */
+    .cards-grid { grid-template-columns: 1fr; gap: 12px; }
+    .person-card { padding: 14px 16px; }
+    .card-name { font-size: 16px; }
+    .month-chip .m-score { font-size: 15px; }
+    .month-chip .m-detail { font-size: 9px; }
+
+    /* tabs */
+    .view-tab { font-size: 12px; padding: 8px 14px; }
+
+    /* 月度明细表横向滚动 */
+    .month-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table.data-table { font-size: 12px; min-width: 480px; }
+    .data-table th, .data-table td { padding: 7px 8px; }
+
+    /* 月份切换按钮 */
+    #monthly-tabs { gap: 6px; }
+    #monthly-tabs button { font-size: 12px; padding: 5px 12px; }
+
+    /* 编辑面板 */
+    .edit-panel { padding: 16px; }
+    .edit-row-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+    .edit-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .edit-field input, .edit-field select { padding: 6px 8px; font-size: 13px; }
+
+    /* 窗口选择器 */
+    .window-list { gap: 6px; }
+    .window-item { font-size: 11px; padding: 5px 10px; }
+
+    /* 图例 */
+    .legend { gap: 10px; font-size: 11px; }
+
+    /* toast */
+    #toast { left: 12px; right: 12px; bottom: 16px; text-align: center; font-size: 13px; }
+  }
+
+  @media (max-width: 400px) {
+    .edit-grid { grid-template-columns: 1fr; }
+    .cards-grid { gap: 10px; }
+  }
+</style>
+
+</head>
+<body>
+
+<!-- 微信内置浏览器提示遮罩 -->
+<div id="wechat-mask">
+  <div class="wechat-arrow">↗</div>
+  <div class="wechat-tip-box">
+    <div class="tip-icon">🌐</div>
+    <h2>请在浏览器中打开</h2>
+    <p>微信内置浏览器限制较多，<br>建议用系统浏览器访问以获得最佳体验。</p>
+    <div class="tip-step">
+      📱 <strong>iOS：</strong>点右上角 <strong>「...」</strong> → 选 <strong>「在浏览器中打开」</strong><br>
+      🤖 <strong>Android：</strong>点右上角 <strong>「⋮」</strong> → 选 <strong>「在浏览器打开」</strong>
+    </div>
+  </div>
+</div>
+
+<script>
+// 检测微信内置浏览器
+(function() {
+  var ua = navigator.userAgent.toLowerCase();
+  if (ua.indexOf('micromessenger') !== -1) {
+    document.getElementById('wechat-mask').classList.add('show');
+  }
+})();
+</script>
+
+
+  <div>
+    <h1>🏆 销售部升职考核追踪系统</h1>
+    <div class="subtitle">实时追踪每位员工的升职进度 · 数据驱动成长</div>
+  </div>
+  <div style="font-size:13px;opacity:0.7;">当前：<span id="currentDateLabel"></span></div>
+</header>
+
+<div class="toolbar">
+  <label>当前窗口月份：</label>
+  <select id="windowSelect" onchange="renderAll()">
+    <!-- 动态生成 -->
+  </select>
+  <span style="font-size:12px;color:#888;">（考核窗口为连续三个月）</span>
+  <div style="flex:1"></div>
+  <button class="btn btn-primary" onclick="switchView('overview')">📊 升职总览</button>
+  <button class="btn btn-warn" onclick="switchView('monthly')">📅 月度明细</button>
+  <button class="btn" id="adminBtn" onclick="handleAdminClick()" style="background:#7f8c8d;color:white;">🔒 管理员</button>
+  <button class="btn" id="exportBtn" onclick="exportHtml()" style="display:none;background:#8e44ad;color:white;">☁️ 同步到云端</button>
+</div>
+
+<div class="criteria-box" style="margin:16px 30px 0;">
+  <strong>升职考核标准：</strong>连续三个月中，每月至少满足以下 <strong>2条</strong> 标准，即可获得升职资格
+  <div class="criteria-tags" style="margin-top:8px;">
+    <span class="tag tag-c1">① 转换率 &gt; 5%</span>
+    <span class="tag tag-c2">② 新客平均值 &gt; 250</span>
+    <span class="tag tag-c3">③ 当月总业绩 前4名</span>
+    <span class="tag tag-promo">🔑 连续3个月 ≥ 2条达标 → 升职！</span>
+  </div>
+</div>
+
+<div class="main-content">
+  
+  <!-- 视图1：升职总览 -->
+  <div id="view-overview" class="view-panel active">
+    <div id="cards-container" class="cards-grid"></div>
+  </div>
+
+  <!-- 视图2：月度明细 -->
+  <div id="view-monthly" class="view-panel">
+    <div id="monthly-tabs" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;"></div>
+    <div id="monthly-table-container"></div>
+  </div>
+
+  <!-- 视图3：数据编辑 -->
+  <div id="view-edit" class="view-panel">
+    <div class="notice-bar">💡 <strong>操作流程：</strong>① 在此编辑数据并保存 → ② 点顶部紫色「☁️ 同步到云端」按钮 → ③ 其他人刷新页面即可看到最新数据。无需上传文件，一键搞定！</div>
+    <div class="edit-panel">
+      <h3>选择编辑月份和员工</h3>
+      <div class="edit-row-header">
+        <div>
+          <label style="font-size:12px;color:#666;display:block;margin-bottom:4px;">月份</label>
+          <select id="editMonth" onchange="populateEditForm()"></select>
+        </div>
+        <div>
+          <label style="font-size:12px;color:#666;display:block;margin-bottom:4px;">员工</label>
+          <select id="editEmployee" onchange="populateEditForm()"></select>
+        </div>
+        <div style="margin-top:18px;">
+          <button class="btn btn-success" onclick="saveEditForm()">💾 保存数据</button>
+        </div>
+        <div style="margin-top:18px;">
+          <button class="btn btn-primary" onclick="addNewEmployee()">➕ 添加新员工</button>
+        </div>
+        <div style="margin-top:18px;">
+          <button class="btn btn-danger" onclick="deleteEmployee()">🗑️ 删除该员工</button>
+        </div>
+      </div>
+      <div class="edit-grid" id="editFormFields">
+        <div class="edit-field">
+          <label>转换率（%，填数字如 5.2）</label>
+          <input type="number" id="ef_rate" step="0.1" min="0" max="100" placeholder="如：5.2">
+        </div>
+        <div class="edit-field">
+          <label>新客平均值</label>
+          <input type="number" id="ef_avgNew" placeholder="如：300">
+        </div>
+        <div class="edit-field">
+          <label>总业绩</label>
+          <input type="number" id="ef_total" placeholder="如：85000">
+        </div>
+      </div>
+    </div>
+    <div class="edit-panel">
+      <h3>📋 当前完整数据预览</h3>
+      <div id="edit-preview-container"></div>
+    </div>
+  </div>
+
+</div>
+
+
+<script>
+
+// ===================== 数据层 =====================
+const STORAGE_KEY = 'sales_promotion_data_v2';
+
+// 初始数据（从图片中录入）
+/*__DATA_START__*/ const defaultData = {
+  "2026-01": {
+    "month_label": "1月",
+    "employees": [
+      {
+        "name": "蔡云峰",
+        "rate": 10.4,
+        "avgNew": 369,
+        "total": 150046
+      },
+      {
+        "name": "邱俊鹏",
+        "rate": 4.7,
+        "avgNew": 219,
+        "total": 92946
+      },
+      {
+        "name": "吕仟民",
+        "rate": 3,
+        "avgNew": 132,
+        "total": 92046
+      },
+      {
+        "name": "关顺杰",
+        "rate": 4.9,
+        "avgNew": 301,
+        "total": 85126
+      },
+      {
+        "name": "邓小江",
+        "rate": 7.6,
+        "avgNew": 270,
+        "total": 82513
+      },
+      {
+        "name": "何作强",
+        "rate": 2.8,
+        "avgNew": 170,
+        "total": 79252
+      },
+      {
+        "name": "曹羽寒",
+        "rate": 3.8,
+        "avgNew": 190,
+        "total": 77970
+      },
+      {
+        "name": "李天辉",
+        "rate": 6.2,
+        "avgNew": 268,
+        "total": 73083
+      },
+      {
+        "name": "张四维",
+        "rate": 7.1,
+        "avgNew": 149,
+        "total": 68529
+      },
+      {
+        "name": "岳洋",
+        "rate": 4.1,
+        "avgNew": 106,
+        "total": 60748
+      },
+      {
+        "name": "杨天骏",
+        "rate": 3.6,
+        "avgNew": 104,
+        "total": 47570
+      },
+      {
+        "name": "刘佳鑫",
+        "rate": 5.2,
+        "avgNew": 150,
+        "total": 40715
+      },
+      {
+        "name": "苏子涵",
+        "rate": 2.9,
+        "avgNew": 61,
+        "total": 20019
+      }
+    ]
+  },
+  "2026-02": {
+    "month_label": "2月",
+    "employees": [
+      {
+        "name": "蔡云峰",
+        "rate": 5.5,
+        "avgNew": 449,
+        "total": 164790
+      },
+      {
+        "name": "吕仟民",
+        "rate": 8.2,
+        "avgNew": 275,
+        "total": 91397
+      },
+      {
+        "name": "邓小江",
+        "rate": 6.7,
+        "avgNew": 386,
+        "total": 73461
+      },
+      {
+        "name": "李天辉",
+        "rate": 5.6,
+        "avgNew": 395,
+        "total": 67053
+      },
+      {
+        "name": "张四维",
+        "rate": 6.4,
+        "avgNew": 307,
+        "total": 67657
+      },
+      {
+        "name": "何作强",
+        "rate": 1.8,
+        "avgNew": 156,
+        "total": 62610
+      },
+      {
+        "name": "邱俊鹏",
+        "rate": 4.4,
+        "avgNew": 158,
+        "total": 54860
+      },
+      {
+        "name": "刘佳鑫",
+        "rate": 8.3,
+        "avgNew": 237,
+        "total": 46002
+      },
+      {
+        "name": "岳洋",
+        "rate": 5.2,
+        "avgNew": 249,
+        "total": 45313
+      },
+      {
+        "name": "苏子涵",
+        "rate": 7.9,
+        "avgNew": 206,
+        "total": 27387
+      },
+      {
+        "name": "关顺杰",
+        "rate": 3.4,
+        "avgNew": 81,
+        "total": 21486
+      },
+      {
+        "name": "杨天骏",
+        "rate": 0.7,
+        "avgNew": 61,
+        "total": 10046
+      },
+      {
+        "name": "曹羽寒",
+        "rate": 3.4,
+        "avgNew": 68,
+        "total": -7253
+      }
+    ]
+  },
+  "2026-03": {
+    "month_label": "3月（截止23日）",
+    "employees": [
+      {
+        "name": "邱俊鹏",
+        "rate": 4,
+        "avgNew": 156,
+        "total": 91535
+      },
+      {
+        "name": "李天辉",
+        "rate": 5.1,
+        "avgNew": 406,
+        "total": 77734
+      },
+      {
+        "name": "岳洋",
+        "rate": 3.5,
+        "avgNew": -10,
+        "total": 52899
+      },
+      {
+        "name": "吕仟民",
+        "rate": 4.7,
+        "avgNew": 228,
+        "total": 51056
+      },
+      {
+        "name": "蔡云峰",
+        "rate": 13.5,
+        "avgNew": 179,
+        "total": 47719
+      },
+      {
+        "name": "刘佳鑫",
+        "rate": 10.1,
+        "avgNew": 261,
+        "total": 33279
+      },
+      {
+        "name": "张四维",
+        "rate": 7.9,
+        "avgNew": 127,
+        "total": 30225
+      },
+      {
+        "name": "关顺杰",
+        "rate": 4.4,
+        "avgNew": 114,
+        "total": 28668
+      },
+      {
+        "name": "何作强",
+        "rate": 5.7,
+        "avgNew": 226,
+        "total": 27463
+      },
+      {
+        "name": "邓小江",
+        "rate": 6.7,
+        "avgNew": 134,
+        "total": 18284
+      },
+      {
+        "name": "曹羽寒",
+        "rate": 3.6,
+        "avgNew": 3,
+        "total": 11053
+      },
+      {
+        "name": "杨天骏",
+        "rate": 3.1,
+        "avgNew": 92,
+        "total": 10915
+      },
+      {
+        "name": "苏子涵",
+        "rate": 5.2,
+        "avgNew": 54,
+        "total": 6412
+      }
+    ]
+  }
+}; /*__DATA_END__*/
+
+// ===================== Supabase 配置 =====================
+const SUPABASE_URL = 'https://fgxqcfrqjdrmexzifrlb.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZneHFjZnJxamRybWV4emlmcmxiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNjY1MzcsImV4cCI6MjA4OTk0MjUzN30.DuhyPKo71SNpov4zjMEREdD0A2Pfr8voZQRClR5KTH0';
+const SB_HEADERS = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' };
+
+async function fetchFromSupabase() {
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/tracker_data?id=eq.main&select=data', { headers: SB_HEADERS });
+    const rows = await res.json();
+    if (rows && rows[0] && rows[0].data) return rows[0].data;
+  } catch(e) { console.warn('Supabase 读取失败，使用内置数据', e); }
+  return null;
+}
+
+async function saveToSupabase(data) {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/tracker_data?id=eq.main', {
+    method: 'PATCH',
+    headers: { ...SB_HEADERS, 'Prefer': 'return=minimal' },
+    body: JSON.stringify({ data: data, updated_at: new Date().toISOString() })
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+}
+
+// 加载/保存数据
+function loadData() {
+  return JSON.parse(JSON.stringify(defaultData));
+}
+
+function saveData(data) {
+  // 内存更新，同步由 exportHtml 负责
+}
+
+let appData = loadData();
+
+// ===================== 考核逻辑 =====================
+function getRankedMonthData(monthKey) {
+  const mData = appData[monthKey];
+  if (!mData) return {};
+  const sorted = [...mData.employees].sort((a, b) => b.total - a.total);
+  const result = {};
+  sorted.forEach((emp, idx) => {
+    result[emp.name] = { ...emp, rank: idx + 1 };
+  });
+  return result;
+}
+
+function checkCriteria(emp, monthKey) {
+  const ranked = getRankedMonthData(monthKey);
+  const empData = ranked[emp];
+  if (!empData) return null; // 该月无数据
+  
+  const c1 = empData.rate > 5;                // 转换率>5%
+  const totalCount = Object.keys(ranked).length;
+  const c2 = empData.avgNew > 250;            // 新客均值>250
+  const c3 = empData.rank <= 4;               // 前4名
+  const metCount = [c1, c2, c3].filter(Boolean).length;
+  
+  return { c1, c2, c3, metCount, empData, rank: empData.rank, totalCount };
+}
+
+// 获取所有月份的有序列表
+function getSortedMonths() {
+  return Object.keys(appData).sort();
+}
+
+// 获取所有员工名单
+function getAllEmployees() {
+  const names = new Set();
+  Object.values(appData).forEach(m => m.employees.forEach(e => names.add(e.name)));
+  return [...names].sort();
+}
+
+// 获取连续三个月窗口列表
+function getWindows() {
+  const months = getSortedMonths();
+  const windows = [];
+  for (let i = 0; i <= months.length - 3; i++) {
+    windows.push([months[i], months[i+1], months[i+2]]);
+  }
+  return windows;
+}
+
+// 评估某员工在某个窗口的升职状态
+function evaluateWindow(empName, window) {
+  const results = window.map(mk => checkCriteria(empName, mk));
+  const validMonths = results.filter(r => r !== null);
+  
+  // 如果窗口内有月份无数据，该窗口尚未完整
+  const isComplete = results.every(r => r !== null);
+  const qualifiedMonths = results.filter(r => r !== null && r.metCount >= 2).length;
+  
+  return { results, isComplete, qualifiedMonths, window };
+}
+
+// 计算员工最佳进度（考虑所有可能窗口）
+function getBestProgress(empName) {
+  const windows = getWindows();
+  if (windows.length === 0) return { pct: 0, qualified: 0, best: null };
+  
+  let bestQualified = 0;
+  let bestWindow = null;
+  let bestResults = null;
+  
+  windows.forEach(win => {
+    const eval_ = evaluateWindow(empName, win);
+    if (eval_.qualifiedMonths > bestQualified) {
+      bestQualified = eval_.qualifiedMonths;
+      bestWindow = win;
+      bestResults = eval_.results;
+    }
+  });
+  
+  // 如果没有任何有效窗口，看当前最新月份的单月进度
+  if (!bestWindow && windows.length > 0) {
+    bestWindow = windows[windows.length - 1];
+    const ev = evaluateWindow(empName, bestWindow);
+    bestQualified = ev.qualifiedMonths;
+    bestResults = ev.results;
+  }
+  
+  const pct = Math.min(100, Math.round((bestQualified / 3) * 100));
+  return {
+    pct,
+    qualified: bestQualified,
+    bestWindow,
+    bestResults,
+    isReady: bestQualified >= 3,
+    isClose: bestQualified >= 2
+  };
+}
+
+// ===================== 渲染逻辑 =====================
+let currentView = 'overview';
+let currentMonthTab = null;
+
+function switchView(v) {
+  if (v === 'edit' && !isAdmin) {
+    showPasswordModal();
+    return;
+  }
+  currentView = v;
+  document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('view-' + v).classList.add('active');
+  
+  if (v === 'overview') renderOverview();
+  else if (v === 'monthly') renderMonthly();
+  else if (v === 'edit') renderEdit();
+}
+
+function renderAll() {
+  if (currentView === 'overview') renderOverview();
+  else if (currentView === 'monthly') renderMonthly();
+  else if (currentView === 'edit') renderEditPreview();
+  updateWindowSelect();
+}
+
+function updateWindowSelect() {
+  const sel = document.getElementById('windowSelect');
+  const windows = getWindows();
+  const months = getSortedMonths();
+  
+  // 生成所有月份选项（单月也可选）
+  const allMonths = months;
+  const currentVal = sel.value;
+  sel.innerHTML = '';
+  
+  // 先加入所有完整三月窗口
+  windows.forEach(win => {
+    const labels = win.map(mk => appData[mk]?.month_label || mk);
+    const opt = document.createElement('option');
+    opt.value = win.join(',');
+    opt.text = labels.join(' → ');
+    sel.appendChild(opt);
+  });
+  
+  if (sel.options.length === 0) {
+    allMonths.forEach(mk => {
+      const opt = document.createElement('option');
+      opt.value = mk;
+      opt.text = appData[mk]?.month_label || mk;
+      sel.appendChild(opt);
+    });
+  }
+  
+  // 恢复选中（默认最后一个）
+  if (currentVal) {
+    for (let o of sel.options) { if (o.value === currentVal) { sel.value = currentVal; break; } }
+  }
+}
+
+function getSelectedWindow() {
+  const val = document.getElementById('windowSelect').value;
+  if (!val) return getWindows()[0] || getSortedMonths();
+  return val.split(',');
+}
+
+// 渲染升职总览
+function renderOverview() {
+  const employees = getAllEmployees();
+  const container = document.getElementById('cards-container');
+  
+  // 按升职进度排序
+  const sorted = employees.map(name => ({ name, progress: getBestProgress(name) }))
+    .sort((a, b) => b.progress.pct - a.progress.pct || b.progress.qualified - a.progress.qualified);
+  
+  container.innerHTML = '';
+  
+  sorted.forEach(({ name, progress }) => {
+    const card = document.createElement('div');
+    card.className = 'person-card' + (progress.isReady ? ' promo-ready' : progress.isClose ? ' promo-close' : '');
+    
+    const badgeClass = progress.isReady ? 'badge-ready' : progress.isClose ? 'badge-close' : 'badge-progress';
+    const badgeText = progress.isReady ? '🏆 达标升职' : progress.isClose ? '🔥 冲刺中' : '📈 进行中';
+    
+    // 月份行
+    const months = getSortedMonths();
+    let monthChipsHTML = '';
+    months.forEach(mk => {
+      const cr = checkCriteria(name, mk);
+      const label = appData[mk]?.month_label || mk;
+      if (!cr) {
+        monthChipsHTML += `<div class="month-chip chip-na"><div class="m-label">${label}</div><div class="m-score" style="color:#bbb">-</div><div class="m-detail">无数据</div></div>`;
+      } else {
+        const chipClass = cr.metCount >= 2 ? 'chip-full' : cr.metCount === 1 ? 'chip-partial' : 'chip-none';
+        const icons = [
+          cr.c1 ? '✅' : '❌',
+          cr.c2 ? '✅' : '❌',
+          cr.c3 ? '✅' : '❌'
+        ].join('');
+        monthChipsHTML += `<div class="month-chip ${chipClass}">
+          <div class="m-label">${label}</div>
+          <div class="m-score" style="color:${cr.metCount>=2?'#1d6a47':cr.metCount===1?'#784212':'#922b21'}">${cr.metCount}/3</div>
+          <div class="m-detail">${icons}</div>
+          <div class="m-detail" style="font-size:9px">第${cr.rank}名</div>
+        </div>`;
+      }
+    });
+    
+    // 进度条颜色
+    const barClass = progress.pct >= 80 ? '' : progress.pct >= 40 ? ' mid' : ' low';
+    
+    // 差距提示
+    const winMonths = progress.bestWindow || [];
+    let gapHTML = '';
+    if (winMonths.length > 0) {
+      (progress.bestResults || []).forEach((cr, idx) => {
+        if (!cr) return;
+        const mk = winMonths[idx];
+        const label = appData[mk]?.month_label || mk;
+        if (cr.metCount < 2) {
+          const gaps = [];
+          if (!cr.c1) {
+            const ranked = getRankedMonthData(mk);
+            const empData = ranked[name];
+            if (empData) {
+              const need = (5.01 - empData.rate).toFixed(1);
+              gaps.push(`转换率需再 +${need}%（当前${empData.rate}%）`);
+            }
+          }
+          if (!cr.c2) {
+            const ranked = getRankedMonthData(mk);
+            const empData = ranked[name];
+            if (empData) {
+              const need = 251 - empData.avgNew;
+              gaps.push(`新客均值需再 +${need}（当前${empData.avgNew}）`);
+            }
+          }
+          if (!cr.c3) {
+            const ranked = getRankedMonthData(mk);
+            const empData = ranked[name];
+            if (empData && empData.rank > 4) {
+              const top4Total = [...Object.values(ranked)].sort((a,b)=>b.total-a.total)[3]?.total || 0;
+              const needMore = top4Total - empData.total + 1;
+              gaps.push(`业绩需再 +${needMore.toLocaleString()}（当前第${cr.rank}名）`);
+            }
+          }
+          if (gaps.length > 0) {
+            gapHTML += `<div style="margin-top:4px;"><span style="color:#888;">${label}：</span>${gaps.join('；')}</div>`;
+          }
+        }
+      });
+    }
+    
+    card.innerHTML = `
+      <div class="card-header">
+        <div class="card-name">${name}</div>
+        <span class="card-badge ${badgeClass}">${badgeText}</span>
+      </div>
+      <div class="month-row">${monthChipsHTML}</div>
+      <div class="promo-progress-wrap">
+        <div class="promo-progress-label">
+          <span>升职进度</span>
+          <span style="font-weight:700;color:${progress.pct>=80?'#27ae60':progress.pct>=40?'#f39c12':'#e74c3c'}">${progress.qualified}/3 月达标 (${progress.pct}%)</span>
+        </div>
+        <div class="promo-bar-bg">
+          <div class="promo-bar-fill${barClass}" style="width:${progress.pct}%"></div>
+        </div>
+      </div>
+      ${gapHTML ? `<div class="gap-hints" style="margin-top:8px;background:#fef9e7;padding:8px;border-radius:6px;font-size:11px;color:#6d4c1e;border-left:3px solid #f39c12;"><b>💡 距离达标的差距：</b>${gapHTML}</div>` : ''}
+    `;
+    
+    container.appendChild(card);
+  });
+  
+  // 图例
+  const legend = document.createElement('div');
+  legend.style.cssText = 'grid-column:1/-1;display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:#666;padding:10px 0;';
+  legend.innerHTML = `
+    <span>月份标记：</span>
+    <span style="padding:3px 8px;background:#d5f5e3;border-radius:4px;">✅ 2条以上达标</span>
+    <span style="padding:3px 8px;background:#fef9e7;border-radius:4px;">⚠️ 仅1条达标</span>
+    <span style="padding:3px 8px;background:#f8f9fa;border-radius:4px;">❌ 未达标</span>
+    <span style="padding:3px 8px;background:#f8f9fa;border-radius:4px;color:#bbb;">— 无数据</span>
+    <span style="margin-left:auto;font-size:11px;color:#aaa;">进度条基于最佳连续三月窗口计算</span>
+  `;
+  container.appendChild(legend);
+}
+
+// 渲染月度明细
+let currentMonthView = null;
+
+function renderMonthly() {
+  const months = getSortedMonths();
+  const tabsContainer = document.getElementById('monthly-tabs');
+  const tableContainer = document.getElementById('monthly-table-container');
+  
+  if (!currentMonthView || !months.includes(currentMonthView)) {
+    currentMonthView = months[months.length - 1];
+  }
+  
+  tabsContainer.innerHTML = '';
+  months.forEach(mk => {
+    const btn = document.createElement('button');
+    btn.className = 'btn' + (mk === currentMonthView ? ' btn-primary' : '');
+    btn.style.cssText = 'padding:7px 18px;border-radius:20px;font-size:13px;';
+    if (mk !== currentMonthView) btn.style.cssText += 'background:#f0f0f0;color:#555;';
+    btn.textContent = appData[mk]?.month_label || mk;
+    btn.onclick = () => { currentMonthView = mk; renderMonthly(); };
+    tabsContainer.appendChild(btn);
+  });
+  
+  const mk = currentMonthView;
+  const ranked = getRankedMonthData(mk);
+  const empList = Object.values(ranked).sort((a, b) => a.rank - b.rank);
+  
+  let html = `
+  <div class="month-table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>排名</th>
+          <th>姓名</th>
+          <th>转换率</th>
+          <th>达标①</th>
+          <th>新客均值</th>
+          <th>达标②</th>
+          <th>总业绩</th>
+          <th>达标③</th>
+          <th>本月达标数</th>
+          <th>本月状态</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+  
+  empList.forEach(emp => {
+    const cr = checkCriteria(emp.name, mk);
+    if (!cr) return;
+    const rankStyle = emp.rank <= 4 ? `rank-${emp.rank}` : '';
+    const rankIcon = emp.rank === 1 ? '🥇' : emp.rank === 2 ? '🥈' : emp.rank === 3 ? '🥉' : emp.rank === 4 ? '4️⃣' : '';
+    
+    const c1Cell = cr.c1 ? `<span class="pass-cell">✅ ${emp.rate}%</span>` : `<span class="fail-cell">❌ ${emp.rate}%<br><small>差${(5.01-emp.rate).toFixed(1)}%</small></span>`;
+    const c2Cell = cr.c2 ? `<span class="pass-cell">✅ ${emp.avgNew}</span>` : `<span class="fail-cell">❌ ${emp.avgNew}<br><small>差${251-emp.avgNew}</small></span>`;
+    const c3Cell = cr.c3 ? `<span class="pass-cell">✅ 第${emp.rank}名</span>` : `<span class="fail-cell">❌ 第${emp.rank}名</span>`;
+    
+    const statusCell = cr.metCount >= 2 
+      ? `<span style="background:#d5f5e3;color:#1d6a47;padding:3px 10px;border-radius:12px;font-weight:700;">✅ 月度达标</span>`
+      : cr.metCount === 1
+      ? `<span style="background:#fef9e7;color:#784212;padding:3px 10px;border-radius:12px;font-weight:700;">⚠️ 差1条</span>`
+      : `<span style="background:#fadbd8;color:#922b21;padding:3px 10px;border-radius:12px;font-weight:700;">❌ 未达标</span>`;
+    
+    html += `<tr>
+      <td class="rank-col ${rankStyle}">${rankIcon} ${emp.rank}</td>
+      <td class="name-col">${emp.name}</td>
+      <td>${emp.rate}%</td>
+      <td>${c1Cell}</td>
+      <td>${emp.avgNew}</td>
+      <td>${c2Cell}</td>
+      <td>${emp.total.toLocaleString()}</td>
+      <td>${c3Cell}</td>
+      <td><span style="font-size:18px;font-weight:800;color:${cr.metCount>=2?'#27ae60':cr.metCount===1?'#f39c12':'#e74c3c'}">${cr.metCount}</span><span style="color:#aaa;font-size:12px;">/3</span></td>
+      <td>${statusCell}</td>
+    </tr>`;
+  });
+  
+  html += '</tbody></table></div>';
+  
+  // 月度统计
+  const passCount = empList.filter(e => {
+    const cr = checkCriteria(e.name, mk);
+    return cr && cr.metCount >= 2;
+  }).length;
+  
+  html = `
+    <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:16px;">
+      <div style="background:white;border-radius:10px;padding:14px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.06);flex:1;min-width:150px;">
+        <div style="font-size:12px;color:#888;">参与人数</div>
+        <div style="font-size:28px;font-weight:800;color:var(--primary)">${empList.length}</div>
+      </div>
+      <div style="background:white;border-radius:10px;padding:14px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.06);flex:1;min-width:150px;">
+        <div style="font-size:12px;color:#888;">月度达标人数</div>
+        <div style="font-size:28px;font-weight:800;color:var(--green)">${passCount}</div>
+      </div>
+      <div style="background:white;border-radius:10px;padding:14px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.06);flex:1;min-width:150px;">
+        <div style="font-size:12px;color:#888;">月度达标率</div>
+        <div style="font-size:28px;font-weight:800;color:var(--blue)">${Math.round(passCount/empList.length*100)}%</div>
+      </div>
+    </div>
+  ` + html;
+  
+  tableContainer.innerHTML = html;
+}
+
+// 渲染编辑面板
+function renderEdit() {
+  const monthSel = document.getElementById('editMonth');
+  const empSel = document.getElementById('editEmployee');
+  
+  const months = getSortedMonths();
+  monthSel.innerHTML = months.map(mk => `<option value="${mk}">${appData[mk]?.month_label || mk}</option>`).join('');
+  // 添加新月份选项
+  monthSel.innerHTML += '<option value="__new__">+ 添加新月份</option>';
+  
+  populateEmployeesForMonth();
+  populateEditForm();
+  renderEditPreview();
+}
+
+function populateEmployeesForMonth() {
+  const mk = document.getElementById('editMonth').value;
+  const empSel = document.getElementById('editEmployee');
+  const allEmps = getAllEmployees();
+  
+  if (mk === '__new__') {
+    empSel.innerHTML = '<option value="">请先输入月份名</option>';
+    return;
+  }
+  
+  const existingEmps = appData[mk]?.employees.map(e => e.name) || [];
+  empSel.innerHTML = existingEmps.map(n => `<option value="${n}">${n}</option>`).join('');
+  // 显示所有员工（可以为新月份添加）
+  const newEmps = allEmps.filter(n => !existingEmps.includes(n));
+  if (newEmps.length > 0) {
+    empSel.innerHTML += '<optgroup label="── 其他员工 ──">' + newEmps.map(n => `<option value="${n}">${n}</option>`).join('') + '</optgroup>';
+  }
+  empSel.innerHTML += '<option value="__new__">+ 添加新员工</option>';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('editMonth').addEventListener('change', () => {
+    const mk = document.getElementById('editMonth').value;
+    if (mk === '__new__') {
+      const newMonth = prompt('请输入月份标识（格式：YYYY-MM，如 2026-04）：');
+      if (newMonth && /^\d{4}-\d{2}$/.test(newMonth)) {
+        const label = prompt('请输入月份显示名称（如：4月）：');
+        if (!appData[newMonth]) {
+          appData[newMonth] = { month_label: label || newMonth, employees: [] };
+          saveData(appData);
+        }
+        document.getElementById('editMonth').innerHTML += `<option value="${newMonth}">${label || newMonth}</option>`;
+        document.getElementById('editMonth').value = newMonth;
+        updateWindowSelect();
+      } else {
+        document.getElementById('editMonth').value = getSortedMonths()[0];
+      }
+    }
+    populateEmployeesForMonth();
+    populateEditForm();
+  });
+});
+
+function populateEditForm() {
+  const mk = document.getElementById('editMonth').value;
+  const empName = document.getElementById('editEmployee').value;
+  if (!mk || mk === '__new__' || !empName || empName === '__new__') return;
+  
+  const empData = appData[mk]?.employees.find(e => e.name === empName);
+  if (empData) {
+    document.getElementById('ef_rate').value = empData.rate;
+    document.getElementById('ef_avgNew').value = empData.avgNew;
+    document.getElementById('ef_total').value = empData.total;
+  } else {
+    document.getElementById('ef_rate').value = '';
+    document.getElementById('ef_avgNew').value = '';
+    document.getElementById('ef_total').value = '';
+  }
+}
+
+function saveEditForm() {
+  const mk = document.getElementById('editMonth').value;
+  let empName = document.getElementById('editEmployee').value;
+  
+  if (!mk || mk === '__new__') { alert('请先选择有效月份'); return; }
+  if (!empName || empName === '__new__') {
+    empName = prompt('请输入员工姓名：');
+    if (!empName) return;
+  }
+  
+  const rate = parseFloat(document.getElementById('ef_rate').value);
+  const avgNew = parseInt(document.getElementById('ef_avgNew').value);
+  const total = parseInt(document.getElementById('ef_total').value);
+  
+  if (isNaN(rate) || isNaN(avgNew) || isNaN(total)) {
+    alert('请填写完整的数据（转换率、新客均值、总业绩）');
+    return;
+  }
+  
+  if (!appData[mk]) { appData[mk] = { month_label: mk, employees: [] }; }
+  
+  const idx = appData[mk].employees.findIndex(e => e.name === empName);
+  if (idx >= 0) {
+    appData[mk].employees[idx] = { name: empName, rate, avgNew, total };
+  } else {
+    appData[mk].employees.push({ name: empName, rate, avgNew, total });
+  }
+  
+  saveData(appData);
+  renderEditPreview();
+  updateWindowSelect();
+  
+  // 显示保存成功提示
+  const btn = document.querySelector('.btn-success[onclick="saveEditForm()"]');
+  const orig = btn.textContent;
+  btn.textContent = '✅ 已保存！';
+  btn.style.background = '#1d6a47';
+  setTimeout(() => { btn.textContent = orig; btn.style.background = ''; }, 1500);
+}
+
+function addNewEmployee() {
+  document.getElementById('editEmployee').value = '__new__';
+  document.getElementById('ef_rate').value = '';
+  document.getElementById('ef_avgNew').value = '';
+  document.getElementById('ef_total').value = '';
+  document.getElementById('ef_rate').focus();
+}
+
+function renderEditPreview() {
+  const container = document.getElementById('edit-preview-container');
+  if (!container) return;
+  
+  const months = getSortedMonths();
+  let html = '';
+  
+  months.forEach(mk => {
+    const ranked = getRankedMonthData(mk);
+    const emps = Object.values(ranked).sort((a, b) => a.rank - b.rank);
+    html += `<div style="margin-bottom:20px;">
+      <div style="font-weight:700;font-size:14px;color:var(--primary);margin-bottom:8px;">📅 ${appData[mk]?.month_label || mk}</div>
+      <div style="overflow-x:auto;">
+      <table class="data-table" style="font-size:12px;">
+        <thead><tr><th>排名</th><th>姓名</th><th>转换率</th><th>新客均值</th><th>总业绩</th><th>操作</th></tr></thead>
+        <tbody>`;
+    emps.forEach(emp => {
+      html += `<tr>
+        <td>${emp.rank}</td>
+        <td>${emp.name}</td>
+        <td>${emp.rate}%</td>
+        <td>${emp.avgNew}</td>
+        <td>${emp.total.toLocaleString()}</td>
+        <td style="display:flex;gap:5px;">
+          <button style="font-size:11px;padding:2px 8px;border:1px solid #ddd;border-radius:4px;cursor:pointer;background:#f8f9fa;" onclick="quickEdit('${mk}','${emp.name}')">编辑</button>
+          <button style="font-size:11px;padding:2px 8px;border:1px solid #f5b7b1;border-radius:4px;cursor:pointer;background:#fadbd8;color:#922b21;" onclick="deleteEmployeeFromAll('${emp.name}')">删除员工</button>
+        </td>
+      </tr>`;
+    });
+    html += `</tbody></table></div></div>`;
+  });
+  
+  container.innerHTML = html;
+}
+
+function quickEdit(mk, empName) {
+  document.getElementById('editMonth').value = mk;
+  populateEmployeesForMonth();
+  // 等一帧再设置 employee
+  setTimeout(() => {
+    document.getElementById('editEmployee').value = empName;
+    populateEditForm();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, 50);
+}
+
+// 从预览表格删除某员工（所有月份）
+function deleteEmployeeFromAll(empName) {
+  if (!confirm(`确定要删除员工 【${empName}】 吗？\n该员工在所有月份的数据将被清除，此操作不可撤销。`)) return;
+  Object.keys(appData).forEach(mk => {
+    if (appData[mk].employees) {
+      appData[mk].employees = appData[mk].employees.filter(e => e.name !== empName);
+    }
+  });
+  saveData(appData);
+  updateWindowSelect();
+  renderEditPreview();
+  renderAll();
+  showToast(`员工 ${empName} 已从所有月份中删除`);
+}
+
+// 删除员工（从所有月份中彻底移除）
+function deleteEmployee() {
+  const empName = document.getElementById('editEmployee').value;
+  if (!empName || empName === '__new__') { alert('请先选择要删除的员工'); return; }
+  if (!confirm(`确定要删除员工 【${empName}】 吗？\n该员工在所有月份的数据将被清除，此操作不可撤销。`)) return;
+  Object.keys(appData).forEach(mk => {
+    if (appData[mk].employees) {
+      appData[mk].employees = appData[mk].employees.filter(e => e.name !== empName);
+    }
+  });
+  saveData(appData);
+  updateWindowSelect();
+  populateEmployeesForMonth();
+  document.getElementById('ef_rate').value = '';
+  document.getElementById('ef_avgNew').value = '';
+  document.getElementById('ef_total').value = '';
+  renderEditPreview();
+  renderAll();
+  showToast(`员工 ${empName} 已从所有月份中删除`);
+}
+
+// 轻提示
+function showToast(msg, color) {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  const isMobile = window.innerWidth <= 768;
+  if (isMobile) {
+    t.style.cssText = `position:fixed;bottom:20px;left:12px;right:12px;text-align:center;background:${color||'#2c3e50'};color:white;padding:10px 16px;border-radius:14px;font-size:13px;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.2);transition:opacity 0.4s;`;
+  } else {
+    t.style.cssText = `position:fixed;bottom:32px;left:50%;transform:translateX(-50%);background:${color||'#2c3e50'};color:white;padding:10px 24px;border-radius:24px;font-size:13px;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.2);transition:opacity 0.4s;`;
+  }
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 400); }, 2500);
+}
+
+// ===================== 管理员密码 =====================
+const ADMIN_PWD = 'admin666'; // ← 在此修改密码
+let isAdmin = false;
+
+function handleAdminClick() {
+  if (isAdmin) {
+    // 已登录 → 点击退出
+    if (confirm('确定要退出管理员模式吗？')) {
+      isAdmin = false;
+      updateAdminBtn();
+      if (currentView === 'edit') switchView('overview');
+      showToast('已退出管理员模式', '#7f8c8d');
+    }
+  } else {
+    // 未登录 → 弹出密码框
+    showPasswordModal();
+  }
+}
+
+function showPasswordModal() {
+  // 创建遮罩 + 弹窗
+  const overlay = document.createElement('div');
+  overlay.id = 'pwdOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML = `
+    <div style="background:white;border-radius:14px;padding:32px 36px;width:320px;box-shadow:0 8px 40px rgba(0,0,0,0.25);text-align:center;">
+      <div style="font-size:36px;margin-bottom:12px;">🔐</div>
+      <div style="font-size:17px;font-weight:700;color:#2c3e50;margin-bottom:6px;">管理员登录</div>
+      <div style="font-size:13px;color:#888;margin-bottom:20px;">请输入管理员密码以进入编辑模式</div>
+      <input id="pwdInput" type="password" placeholder="请输入密码"
+        style="width:100%;padding:10px 14px;border:1.5px solid #ddd;border-radius:8px;font-size:15px;text-align:center;outline:none;margin-bottom:8px;"
+        onkeydown="if(event.key==='Enter')confirmPwd()"
+        autofocus>
+      <div id="pwdError" style="font-size:12px;color:#e74c3c;height:18px;margin-bottom:8px;"></div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="closePwdModal()" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;background:#f8f9fa;cursor:pointer;font-size:14px;">取消</button>
+        <button onclick="confirmPwd()" style="flex:1;padding:10px;border:none;border-radius:8px;background:#2980b9;color:white;cursor:pointer;font-size:14px;font-weight:700;">确认</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  setTimeout(() => document.getElementById('pwdInput')?.focus(), 100);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closePwdModal(); });
+}
+
+function closePwdModal() {
+  document.getElementById('pwdOverlay')?.remove();
+}
+
+function confirmPwd() {
+  const val = document.getElementById('pwdInput')?.value;
+  if (val === ADMIN_PWD) {
+    isAdmin = true;
+    closePwdModal();
+    updateAdminBtn();
+    switchView('edit');
+    showToast('✅ 已进入管理员模式', '#27ae60');
+  } else {
+    const err = document.getElementById('pwdError');
+    if (err) { err.textContent = '密码错误，请重试'; }
+    const inp = document.getElementById('pwdInput');
+    if (inp) { inp.value = ''; inp.style.borderColor = '#e74c3c'; inp.focus(); setTimeout(() => { inp.style.borderColor = '#ddd'; }, 1200); }
+  }
+}
+
+function updateAdminBtn() {
+  const btn = document.getElementById('adminBtn');
+  const exportBtn = document.getElementById('exportBtn');
+  if (!btn) return;
+  if (isAdmin) {
+    btn.textContent = '🔓 管理员（退出）';
+    btn.style.background = '#27ae60';
+    if (exportBtn) exportBtn.style.display = '';
+  } else {
+    btn.textContent = '🔒 管理员';
+    btn.style.background = '#7f8c8d';
+    if (exportBtn) exportBtn.style.display = 'none';
+  }
+}
+
+// 同步数据到 Supabase（管理员专用）
+async function exportHtml() {
+  const btn = document.getElementById('exportBtn');
+  const orig = btn.textContent;
+  btn.textContent = '⏳ 同步中...';
+  btn.disabled = true;
+  try {
+    await saveToSupabase(appData);
+    btn.textContent = '✅ 已同步！';
+    btn.style.background = '#27ae60';
+    showToast('✅ 数据已同步到云端！其他人刷新页面即可看到最新数据', '#27ae60');
+    setTimeout(() => { btn.textContent = orig; btn.style.background = '#8e44ad'; btn.disabled = false; }, 2500);
+  } catch(e) {
+    btn.textContent = orig;
+    btn.disabled = false;
+    alert('同步失败：' + e.message + '\n请检查网络连接后重试');
+  }
+}
+// ===================== 初始化 =====================
+document.getElementById('currentDateLabel').textContent = new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
+
+async function initApp() {
+  // 优先从 Supabase 拉取最新数据
+  const cloudData = await fetchFromSupabase();
+  if (cloudData) {
+    appData = cloudData;
+  }
+
+  updateWindowSelect();
+  renderOverview();
+
+  // 初始化编辑面板下拉
+  const editMonthSel = document.getElementById('editMonth');
+  getSortedMonths().forEach(mk => {
+    const opt = document.createElement('option');
+    opt.value = mk;
+    opt.text = appData[mk]?.month_label || mk;
+    editMonthSel.appendChild(opt);
+  });
+  const newOpt = document.createElement('option');
+  newOpt.value = '__new__';
+  newOpt.text = '+ 添加新月份';
+  editMonthSel.appendChild(newOpt);
+
+  populateEmployeesForMonth();
+}
+
+initApp();
+
+</script>
+
+</body>
+</html>
