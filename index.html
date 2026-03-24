@@ -631,7 +631,7 @@ const STORAGE_KEY = 'sales_promotion_data_v2';
     ]
   },
   "2026-03": {
-    "month_label": "3月（截止23日）",
+    "month_label": "3月",
     "employees": [
       {
         "name": "邱俊鹏",
@@ -871,19 +871,37 @@ function renderAll() {
   updateWindowSelect();
 }
 
+// 获取当前自然月对应的数据键（YYYY-MM）
+function getCurrentMonthKey() {
+  const now = new Date();
+  return now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+}
+
+// 获取最新窗口（按月份排序的最后3个月）
+function getLatestWindow() {
+  const windows = getWindows();
+  return windows.length > 0 ? windows[windows.length - 1] : getSortedMonths().slice(-3);
+}
+
+// 为窗口内某个月份生成显示标签
+function getMonthChipLabel(mk, posInWindow, isLatestWindow) {
+  const baseLabel = appData[mk]?.month_label || mk;
+  if (!isLatestWindow || posInWindow !== 2) return baseLabel;
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  return baseLabel + '（截止' + yesterday.getDate() + '日）';
+}
+
 function updateWindowSelect() {
   const sel = document.getElementById('windowSelect');
   const windows = getWindows();
   const months = getSortedMonths();
-  
-  // 生成所有月份选项（单月也可选）
-  const allMonths = months;
   const currentVal = sel.value;
   sel.innerHTML = '';
   
-  // 先加入所有完整三月窗口
-  windows.forEach(win => {
-    const labels = win.map(mk => appData[mk]?.month_label || mk);
+  windows.forEach((win, winIdx) => {
+    const isLatest = winIdx === windows.length - 1;
+    const labels = win.map((mk, pos) => getMonthChipLabel(mk, pos, isLatest));
     const opt = document.createElement('option');
     opt.value = win.join(',');
     opt.text = labels.join(' → ');
@@ -891,7 +909,7 @@ function updateWindowSelect() {
   });
   
   if (sel.options.length === 0) {
-    allMonths.forEach(mk => {
+    months.forEach(mk => {
       const opt = document.createElement('option');
       opt.value = mk;
       opt.text = appData[mk]?.month_label || mk;
@@ -899,7 +917,6 @@ function updateWindowSelect() {
     });
   }
   
-  // 恢复选中（默认最后一个）
   if (currentVal) {
     for (let o of sel.options) { if (o.value === currentVal) { sel.value = currentVal; break; } }
   }
@@ -929,21 +946,19 @@ function renderOverview() {
     const badgeClass = progress.isReady ? 'badge-ready' : progress.isClose ? 'badge-close' : 'badge-progress';
     const badgeText = progress.isReady ? '🏆 达标升职' : progress.isClose ? '🔥 冲刺中' : '📈 进行中';
     
-    // 月份行
+    // 月份行（chip 标签）
     const months = getSortedMonths();
+    const latestWin = getLatestWindow();
     let monthChipsHTML = '';
     months.forEach(mk => {
       const cr = checkCriteria(name, mk);
-      const label = appData[mk]?.month_label || mk;
+      const posInLatest = latestWin.indexOf(mk);
+      const label = getMonthChipLabel(mk, posInLatest, posInLatest !== -1);
       if (!cr) {
         monthChipsHTML += `<div class="month-chip chip-na"><div class="m-label">${label}</div><div class="m-score" style="color:#bbb">-</div><div class="m-detail">无数据</div></div>`;
       } else {
         const chipClass = cr.metCount >= 2 ? 'chip-full' : cr.metCount === 1 ? 'chip-partial' : 'chip-none';
-        const icons = [
-          cr.c1 ? '✅' : '❌',
-          cr.c2 ? '✅' : '❌',
-          cr.c3 ? '✅' : '❌'
-        ].join('');
+        const icons = [cr.c1?'✅':'❌', cr.c2?'✅':'❌', cr.c3?'✅':'❌'].join('');
         monthChipsHTML += `<div class="month-chip ${chipClass}">
           <div class="m-label">${label}</div>
           <div class="m-score" style="color:${cr.metCount>=2?'#1d6a47':cr.metCount===1?'#784212':'#922b21'}">${cr.metCount}/3</div>
@@ -956,46 +971,54 @@ function renderOverview() {
     // 进度条颜色
     const barClass = progress.pct >= 80 ? '' : progress.pct >= 40 ? ' mid' : ' low';
     
-    // 差距提示
-    const winMonths = progress.bestWindow || [];
+    // ===== 差距提示（新逻辑） =====
+    const curMonthKey = getCurrentMonthKey();
+    const winMonths = getLatestWindow();
     let gapHTML = '';
-    if (winMonths.length > 0) {
-      (progress.bestResults || []).forEach((cr, idx) => {
-        if (!cr) return;
-        const mk = winMonths[idx];
-        const label = appData[mk]?.month_label || mk;
-        if (cr.metCount < 2) {
-          const gaps = [];
-          if (!cr.c1) {
-            const ranked = getRankedMonthData(mk);
-            const empData = ranked[name];
-            if (empData) {
-              const need = (5.01 - empData.rate).toFixed(1);
-              gaps.push(`转换率需再 +${need}%（当前${empData.rate}%）`);
-            }
-          }
-          if (!cr.c2) {
-            const ranked = getRankedMonthData(mk);
-            const empData = ranked[name];
-            if (empData) {
-              const need = 251 - empData.avgNew;
-              gaps.push(`新客均值需再 +${need}（当前${empData.avgNew}）`);
-            }
-          }
-          if (!cr.c3) {
-            const ranked = getRankedMonthData(mk);
-            const empData = ranked[name];
-            if (empData && empData.rank > 4) {
-              const top4Total = [...Object.values(ranked)].sort((a,b)=>b.total-a.total)[3]?.total || 0;
-              const needMore = top4Total - empData.total + 1;
-              gaps.push(`业绩需再 +${needMore.toLocaleString()}（当前第${cr.rank}名）`);
-            }
-          }
-          if (gaps.length > 0) {
-            gapHTML += `<div style="margin-top:4px;"><span style="color:#888;">${label}：</span>${gaps.join('；')}</div>`;
+
+    const curIdx = winMonths.indexOf(curMonthKey);
+
+    let preQualified = 0;
+    for (let i = 0; i < curIdx; i++) {
+      const cr = checkCriteria(name, winMonths[i]);
+      if (cr && cr.metCount >= 2) preQualified++;
+    }
+
+    const curCr = curIdx >= 0 ? checkCriteria(name, curMonthKey) : null;
+
+    if (curCr) {
+      if (curCr.metCount < 2) {
+        const gaps = [];
+        const ranked = getRankedMonthData(curMonthKey);
+        const empData = ranked[name];
+        if (empData) {
+          if (!curCr.c1) gaps.push(`转换率需再 +${(5.01 - empData.rate).toFixed(1)}%（当前${empData.rate}%）`);
+          if (!curCr.c2) gaps.push(`新客均值需再 +${251 - empData.avgNew}（当前${empData.avgNew}）`);
+          if (!curCr.c3 && empData.rank > 4) {
+            const top4Total = [...Object.values(ranked)].sort((a,b)=>b.total-a.total)[3]?.total || 0;
+            gaps.push(`业绩需再 +${(top4Total - empData.total + 1).toLocaleString()}（当前第${curCr.rank}名）`);
           }
         }
-      });
+        if (gaps.length > 0) {
+          gapHTML += `<div style="margin-top:4px;">本月还需：${gaps.join('；')}</div>`;
+        }
+      }
+    }
+
+    const afterCount = curIdx >= 0 ? (winMonths.length - curIdx - 1) : 0;
+    const maxPossible = preQualified + (curIdx >= 0 ? 1 : 0) + afterCount;
+    const isHopeless = maxPossible < 3;
+
+    if (isHopeless) {
+      let futureMsg = '';
+      if (curCr && curCr.metCount >= 2) {
+        futureMsg = '本月已达标！继续保持，从下月起需连续两月满足2条以上标准即可晋升。';
+      } else if (curCr && curCr.metCount < 2) {
+        futureMsg = '当前考核窗口已无法凑满3月。努力完成本月目标后，下月起连续三月满足2条以上标准即可开启新窗口冲击晋升！';
+      } else {
+        futureMsg = '努力方向：转换率 >5%、新客均值 >250、总业绩进前4名，每月满足其中2条，连续三月即可晋升。';
+      }
+      gapHTML += `<div style="margin-top:6px;color:#5d6d7e;">💪 ${futureMsg}</div>`;
     }
     
     card.innerHTML = `
@@ -1254,7 +1277,21 @@ function saveEditForm() {
 }
 
 function addNewEmployee() {
-  document.getElementById('editEmployee').value = '__new__';
+  const empName = prompt('请输入新员工姓名：');
+  if (!empName || !empName.trim()) return;
+  const name = empName.trim();
+  const empSel = document.getElementById('editEmployee');
+  let found = false;
+  for (let o of empSel.options) { if (o.value === name) { found = true; break; } }
+  if (!found) {
+    const newOpt = document.createElement('option');
+    newOpt.value = name;
+    newOpt.text = name;
+    const lastOpt = empSel.querySelector('option[value="__new__"]');
+    if (lastOpt) empSel.insertBefore(newOpt, lastOpt);
+    else empSel.appendChild(newOpt);
+  }
+  empSel.value = name;
   document.getElementById('ef_rate').value = '';
   document.getElementById('ef_avgNew').value = '';
   document.getElementById('ef_total').value = '';
