@@ -271,12 +271,20 @@
   /* ===== 移动端全面适配 ===== */
   @media (max-width: 768px) {
     header {
-      padding: 12px 14px;
-      flex-direction: column; align-items: flex-start; gap: 4px;
+      padding: 10px 12px;
+      flex-direction: row; align-items: center; gap: 6px;
+      flex-wrap: nowrap;
     }
-    header h1 { font-size: 16px; }
-    header .subtitle { font-size: 11px; }
-    header > div:last-child { font-size: 11px; align-self: flex-end; margin-top: -20px; }
+    header > div:first-child { flex: 1; min-width: 0; }
+    header h1 {
+      font-size: clamp(12px, 3.8vw, 18px);
+      letter-spacing: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    header .subtitle { display: none; }
+    header > div:last-child { font-size: 11px; white-space: nowrap; flex-shrink: 0; }
 
     .toolbar {
       padding: 8px 12px; gap: 8px;
@@ -980,24 +988,56 @@ function renderOverview() {
 
     const curIdx = winMonths.indexOf(curMonthKey);
 
-    const curCr = curIdx >= 0 ? checkCriteria(name, curMonthKey) : null;
+    // 计算窗口内当前月之前已达标的月数
+    let preQualified = 0;
+    for (let i = 0; i < curIdx; i++) {
+      const cr = checkCriteria(name, winMonths[i]);
+      if (cr && cr.metCount >= 2) preQualified++;
+    }
 
-    if (curCr) {
-      if (curCr.metCount < 2) {
-        const gaps = [];
-        const ranked = getRankedMonthData(curMonthKey);
-        const empData = ranked[name];
-        if (empData) {
-          if (!curCr.c1) gaps.push(`转换率需再 +${(5.01 - empData.rate).toFixed(1)}%（当前${empData.rate}%）`);
-          if (!curCr.c2) gaps.push(`新客均值需再 +${251 - empData.avgNew}（当前${empData.avgNew}）`);
-          if (!curCr.c3 && empData.rank > 4) {
-            const top4Total = [...Object.values(ranked)].sort((a,b)=>b.total-a.total)[3]?.total || 0;
-            gaps.push(`业绩需再 +${(top4Total - empData.total + 1).toLocaleString()}（当前第${curCr.rank}名）`);
-          }
+    // 当前月是否有数据及达标情况
+    const curCr = curIdx >= 0 ? checkCriteria(name, curMonthKey) : null;
+    const curPassed = curCr && curCr.metCount >= 2;
+
+    // --- 情况1：当月已达标 → 鼓励保持到月底 ---
+    if (curCr && curPassed) {
+      gapHTML += `<div style="margin-top:4px;">🎉 本月截至目前已达标，继续保持到月底！</div>`;
+    }
+
+    // --- 情况2：当月有数据但未达标 → 提示具体差距 ---
+    if (curCr && !curPassed) {
+      const gaps = [];
+      const ranked = getRankedMonthData(curMonthKey);
+      const empData = ranked[name];
+      if (empData) {
+        if (!curCr.c1) gaps.push(`转换率需再 +${(5.01 - empData.rate).toFixed(1)}%（当前${empData.rate}%）`);
+        if (!curCr.c2) gaps.push(`新客均值需再 +${251 - empData.avgNew}（当前${empData.avgNew}）`);
+        if (!curCr.c3 && empData.rank > 4) {
+          const top4Total = [...Object.values(ranked)].sort((a,b)=>b.total-a.total)[3]?.total || 0;
+          gaps.push(`业绩需再 +${(top4Total - empData.total + 1).toLocaleString()}（当前第${curCr.rank}名）`);
         }
-        if (gaps.length > 0) {
-          gapHTML += `<div style="margin-top:4px;">本月还需：${gaps.join('；')}</div>`;
-        }
+      }
+      if (gaps.length > 0) {
+        gapHTML += `<div style="margin-top:4px;">本月还需：${gaps.join('；')}</div>`;
+      }
+    }
+
+    // --- 情况3：当前窗口无望 → 个性化未来努力方向 ---
+    const afterCount = curIdx >= 0 ? (winMonths.length - curIdx - 1) : 0;
+    const maxPossible = preQualified + (curIdx >= 0 ? 1 : 0) + afterCount;
+    if (maxPossible < 3) {
+      const alreadyIfPass = preQualified + 1;
+      const stillNeed = 3 - alreadyIfPass;
+      let futureMsg = '';
+      if (preQualified === 0) {
+        futureMsg = `当前考核窗口已无法在本窗口内晋升。建议本月冲刺达标，再连续两个月满足2条以上标准，开启新窗口冲击晋升！`;
+      } else if (preQualified === 1) {
+        futureMsg = `当前窗口已有1个月达标。若本月达标，下月再达标1次即可晋升，加油冲刺！`;
+      } else if (preQualified >= 2) {
+        futureMsg = `再努力本月达标即可晋升！`;
+      }
+      if (futureMsg) {
+        gapHTML += `<div style="margin-top:6px;color:#5d6d7e;">💪 ${futureMsg}</div>`;
       }
     }
 
