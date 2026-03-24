@@ -885,7 +885,9 @@ function getLatestWindow() {
 
 // 为窗口内某个月份生成显示标签
 function getMonthChipLabel(mk, posInWindow, isLatestWindow) {
-  const baseLabel = appData[mk]?.month_label || mk;
+  // 先剥掉 month_label 里可能残留的旧括号（如"3月（截止23日）"→"3月"）
+  const rawLabel = appData[mk]?.month_label || mk;
+  const baseLabel = rawLabel.replace(/（[^）]*）$/, '').replace(/\([^)]*\)$/, '');
   if (!isLatestWindow || posInWindow !== 2) return baseLabel;
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
@@ -978,12 +980,6 @@ function renderOverview() {
 
     const curIdx = winMonths.indexOf(curMonthKey);
 
-    let preQualified = 0;
-    for (let i = 0; i < curIdx; i++) {
-      const cr = checkCriteria(name, winMonths[i]);
-      if (cr && cr.metCount >= 2) preQualified++;
-    }
-
     const curCr = curIdx >= 0 ? checkCriteria(name, curMonthKey) : null;
 
     if (curCr) {
@@ -1005,21 +1001,6 @@ function renderOverview() {
       }
     }
 
-    const afterCount = curIdx >= 0 ? (winMonths.length - curIdx - 1) : 0;
-    const maxPossible = preQualified + (curIdx >= 0 ? 1 : 0) + afterCount;
-    const isHopeless = maxPossible < 3;
-
-    if (isHopeless) {
-      let futureMsg = '';
-      if (curCr && curCr.metCount >= 2) {
-        futureMsg = '本月已达标！继续保持，从下月起需连续两月满足2条以上标准即可晋升。';
-      } else if (curCr && curCr.metCount < 2) {
-        futureMsg = '当前考核窗口已无法凑满3月。努力完成本月目标后，下月起连续三月满足2条以上标准即可开启新窗口冲击晋升！';
-      } else {
-        futureMsg = '努力方向：转换率 >5%、新客均值 >250、总业绩进前4名，每月满足其中2条，连续三月即可晋升。';
-      }
-      gapHTML += `<div style="margin-top:6px;color:#5d6d7e;">💪 ${futureMsg}</div>`;
-    }
     
     card.innerHTML = `
       <div class="card-header">
