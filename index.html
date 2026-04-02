@@ -803,13 +803,15 @@ function checkCriteria(emp, monthKey) {
 
 // 获取所有月份的有序列表
 function getSortedMonths() {
-  return Object.keys(appData).sort();
+  return Object.keys(appData).filter(k => appData[k] && Array.isArray(appData[k].employees)).sort();
 }
 
 // 获取所有员工名单
 function getAllEmployees() {
   const names = new Set();
-  Object.values(appData).forEach(m => m.employees.forEach(e => names.add(e.name)));
+  Object.values(appData).forEach(m => {
+    if (m && Array.isArray(m.employees)) m.employees.forEach(e => names.add(e.name));
+  });
   return [...names].sort();
 }
 
@@ -835,40 +837,94 @@ function evaluateWindow(empName, window) {
   return { results, isComplete, qualifiedMonths, window };
 }
 
-// 计算员工最佳进度（考虑所有可能窗口）
+// 计算员工晋升进度
+// 晋升规则：连续三个月达标，中断则从头计算
+// 核心逻辑：从当前月开始往前数连续达标，一旦某月未达标就中断，前面的达标月份不再有意义
 function getBestProgress(empName) {
-  const windows = getWindows();
-  if (windows.length === 0) return { pct: 0, qualified: 0, best: null };
+  const allMonths = getSortedMonths();
+  if (allMonths.length === 0) return { pct: 0, qualified: 0, bestWindow: null, bestResults: null, isReady: false, isClose: false, confirmedStreak: 0, hasCurMonth: false, curMonthQualified: false };
   
-  let bestQualified = 0;
-  let bestWindow = null;
-  let bestResults = null;
+  const curMonthKey = getCurrentMonthKey();
+  const curIdx = allMonths.indexOf(curMonthKey);
+  const hasCurMonth = curIdx >= 0;
   
-  windows.forEach(win => {
-    const eval_ = evaluateWindow(empName, win);
-    if (eval_.qualifiedMonths > bestQualified) {
-      bestQualified = eval_.qualifiedMonths;
-      bestWindow = win;
-      bestResults = eval_.results;
+  // 判断当前月是否达标
+  const curCr = hasCurMonth ? checkCriteria(empName, curMonthKey) : null;
+  const curMonthQualified = curCr && curCr.metCount >= 2;
+  
+  // 从当前月开始往前数连续达标，中断即停
+  let effectiveQualified = 0;
+  let streakMonths = [];
+  
+  if (curMonthQualified) {
+    // 当前月达标（阶段性），往前数连续达标
+    effectiveQualified = 1;
+    streakMonths = [curMonthKey];
+    for (let i = curIdx - 1; i >= 0 && effectiveQualified < 3; i--) {
+      const cr = checkCriteria(empName, allMonths[i]);
+      if (cr && cr.metCount >= 2) {
+        effectiveQualified++;
+        streakMonths.unshift(allMonths[i]);
+      } else {
+        break; // 连续达标中断，前面不再有意义
+      }
     }
-  });
-  
-  // 如果没有任何有效窗口，看当前最新月份的单月进度
-  if (!bestWindow && windows.length > 0) {
-    bestWindow = windows[windows.length - 1];
-    const ev = evaluateWindow(empName, bestWindow);
-    bestQualified = ev.qualifiedMonths;
-    bestResults = ev.results;
+  } else if (hasCurMonth) {
+    // 当前月有数据但未达标 → 看紧邻的前一个月是否达标（本月没完还有机会）
+    const prevMonth = curIdx >= 1 ? allMonths[curIdx - 1] : null;
+    if (prevMonth) {
+      const prevCr = checkCriteria(empName, prevMonth);
+      if (prevCr && prevCr.metCount >= 2) {
+        // 前一个月达标，继续往前数
+        effectiveQualified = 1;
+        streakMonths = [prevMonth];
+        const prevIdx = curIdx - 1;
+        for (let i = prevIdx - 1; i >= 0 && effectiveQualified < 3; i--) {
+          const cr = checkCriteria(empName, allMonths[i]);
+          if (cr && cr.metCount >= 2) {
+            effectiveQualified++;
+            streakMonths.unshift(allMonths[i]);
+          } else {
+            break;
+          }
+        }
+      }
+    }
+    // effectiveQualified 只算已确认的历史达标月数，当前月不达标不算
+    // confirmedStreak = effectiveQualified（都是已确认的历史月）
   }
+  // 如果当前月无数据 → 不算任何进度
   
-  const pct = Math.min(100, Math.round((bestQualified / 3) * 100));
+  // confirmedStreak: 已确认的连续达标月数（不含当前月）
+  // 当前月达标时，confirmedStreak = effectiveQualified - 1
+  // 当前月未达标/无数据时，confirmedStreak = effectiveQualified
+  const confirmedStreak = curMonthQualified ? effectiveQualified - 1 : effectiveQualified;
+  
+  // 用于卡片显示的窗口（最近3个月）
+  const latestIdx = hasCurMonth ? curIdx : allMonths.length - 1;
+  const windowMonths = [];
+  for (let i = Math.max(0, latestIdx - 2); i <= latestIdx; i++) {
+    windowMonths.push(allMonths[i]);
+  }
+  const windowResults = windowMonths.map(mk => checkCriteria(empName, mk));
+  const isComplete = windowResults.every(r => r !== null);
+  
+  // pct: 如果当前月达标，进度包含当前月；否则只算历史确认的
+  const displayQualified = curMonthQualified ? effectiveQualified : effectiveQualified;
+  const pct = Math.min(100, Math.round((displayQualified / 3) * 100));
+  
   return {
     pct,
-    qualified: bestQualified,
-    bestWindow,
-    bestResults,
-    isReady: bestQualified >= 3,
-    isClose: bestQualified >= 2
+    qualified: displayQualified,
+    confirmedStreak,
+    bestWindow: windowMonths,
+    bestResults: windowResults,
+    streakMonths,
+    isComplete,
+    hasCurMonth,
+    curMonthQualified,
+    isReady: effectiveQualified >= 3 && hasCurMonth && curMonthQualified,
+    isClose: displayQualified >= 2
   };
 }
 
@@ -994,7 +1050,7 @@ function renderOverview() {
           <div class="promo-bar-fill" style="width:100%"></div>
         </div>
       </div>
-      <div class="gap-hints" style="margin-top:8px;background:#d5f5e3;padding:8px;border-radius:6px;font-size:11px;color:#1d6a47;border-left:3px solid #27ae60;">🎉 恭喜！该员工已成功达成晋升条件，数据已冻结。</div>
+      <div class="gap-hints" style="margin-top:8px;background:#d5f5e3;padding:8px;border-radius:6px;font-size:11px;color:#1d6a47;border-left:3px solid #27ae60;">🎉 恭喜！该员工已成功达成晋升条件！</div>
     `;
     
     container.appendChild(card);
@@ -1036,25 +1092,30 @@ function renderOverview() {
     
     // ===== 差距提示 =====
     const curMonthKey = getCurrentMonthKey();
-    const winMonths = getLatestWindow();
     let gapHTML = '';
 
-    const curIdx = winMonths.indexOf(curMonthKey);
+    const confirmedStreak = progress.confirmedStreak;
+    const curCr = checkCriteria(name, curMonthKey);
+    const curPassed = progress.curMonthQualified;
 
-    let preQualified = 0;
-    for (let i = 0; i < curIdx; i++) {
-      const cr = checkCriteria(name, winMonths[i]);
-      if (cr && cr.metCount >= 2) preQualified++;
-    }
-
-    const curCr = curIdx >= 0 ? checkCriteria(name, curMonthKey) : null;
-    const curPassed = curCr && curCr.metCount >= 2;
+    // 获取最新上传数据日
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const dataDate = yesterday.getDate();
 
     if (curCr && curPassed) {
-      gapHTML += `<div style="margin-top:4px;">🎉 本月截至目前已达标，继续保持到月底！</div>`;
-    }
-
-    if (curCr && !curPassed) {
+      // 当前月已达标（阶段性）
+      gapHTML += `<div style="margin-top:4px;">🎉 本月截止${dataDate}日已达标，加油保持到月底！</div>`;
+      // 提示还需连续达标几个月
+      if (confirmedStreak <= 0) {
+        gapHTML += `<div style="margin-top:4px;color:#5d6d7e;">💪 如果本月最终达标，再连续达标2个月即可晋升！</div>`;
+      } else if (confirmedStreak === 1) {
+        gapHTML += `<div style="margin-top:4px;color:#5d6d7e;">💪 如果本月最终达标，再连续达标1个月即可晋升！</div>`;
+      } else if (confirmedStreak === 2) {
+        gapHTML += `<div style="margin-top:4px;color:#5d6d7e;">💪 本月保持达标到月底即可晋升！</div>`;
+      }
+    } else if (curCr && !curPassed) {
+      // 当前月有数据但未达标
       const gaps = [];
       const ranked = getRankedMonthData(curMonthKey);
       const empData = ranked[name];
@@ -1069,23 +1130,28 @@ function renderOverview() {
       if (gaps.length > 0) {
         gapHTML += `<div style="margin-top:4px;">本月还需：${gaps.join('；')}</div>`;
       }
-    }
-
-    const afterCount = curIdx >= 0 ? (winMonths.length - curIdx - 1) : 0;
-    const maxPossible = preQualified + (curIdx >= 0 ? 1 : 0) + afterCount;
-    if (maxPossible < 3) {
-      const alreadyIfPass = preQualified + 1;
-      const stillNeed = 3 - alreadyIfPass;
-      let futureMsg = '';
-      if (preQualified === 0) {
-        futureMsg = `当前考核窗口已无法在本窗口内晋升。建议本月冲刺达标，再连续两个月满足2条以上标准，开启新窗口冲击晋升！`;
-      } else if (preQualified === 1) {
-        futureMsg = `当前窗口已有1个月达标。若本月达标，下月再达标1次即可晋升，加油冲刺！`;
-      } else if (preQualified >= 2) {
-        futureMsg = `再努力本月达标即可晋升！`;
+      // 前置连续达标段提示
+      if (confirmedStreak > 0) {
+        gapHTML += `<div style="margin-top:4px;color:#5d6d7e;">💪 ${confirmedStreak === 1 ? '上个月已达标' : '已连续' + confirmedStreak + '个月达标'}，本月一定要加油达标！</div>`;
+        if (confirmedStreak === 1) {
+          gapHTML += `<div style="margin-top:2px;color:#5d6d7e;">如果本月达标就连续2个月达标了，下个月再达标即可晋升！</div>`;
+        } else if (confirmedStreak === 2) {
+          gapHTML += `<div style="margin-top:2px;color:#5d6d7e;">本月达标即可达成连续3个月达标晋升！</div>`;
+        }
+      } else {
+        gapHTML += `<div style="margin-top:4px;color:#5d6d7e;">💪 从本月开始连续3个月达标即可晋升！</div>`;
       }
-      if (futureMsg) {
-        gapHTML += `<div style="margin-top:6px;color:#5d6d7e;">💪 ${futureMsg}</div>`;
+    } else if (!curCr) {
+      // 当前月无数据
+      if (confirmedStreak > 0) {
+        gapHTML += `<div style="margin-top:4px;color:#5d6d7e;">💪 ${confirmedStreak === 1 ? '上个月已达标' : '已连续' + confirmedStreak + '个月达标'}，本月加油达标！</div>`;
+        if (confirmedStreak === 1) {
+          gapHTML += `<div style="margin-top:2px;color:#5d6d7e;">如果本月达标就连续2个月达标了，下个月再达标即可晋升！</div>`;
+        } else if (confirmedStreak === 2) {
+          gapHTML += `<div style="margin-top:2px;color:#5d6d7e;">本月达标即可达成连续3个月达标晋升！</div>`;
+        }
+      } else {
+        gapHTML += `<div style="margin-top:4px;color:#5d6d7e;">💪 从本月开始连续3个月达标即可晋升！</div>`;
       }
     }
 
