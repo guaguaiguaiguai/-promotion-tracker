@@ -434,6 +434,12 @@
         <div style="margin-top:18px;">
           <button class="btn btn-danger" onclick="deleteEmployee()">🗑️ 删除该员工</button>
         </div>
+        <div style="margin-top:18px;">
+          <button class="btn" onclick="confirmPromote()" style="background:#8e44ad;color:white;">🏆 确认晋升</button>
+        </div>
+        <div style="margin-top:18px;">
+          <button class="btn" onclick="revokePromotion()" style="background:#95a5a6;color:white;">↩️ 撤回晋升</button>
+        </div>
       </div>
       <div class="edit-grid" id="editFormFields">
         <div class="edit-field">
@@ -751,6 +757,24 @@ function saveData(data) {
 
 let appData = loadData();
 
+// ===================== 已晋升员工列表 =====================
+// 这些员工截止上个月底已达成晋升条件，卡片冻结，排列最前，不再更新
+// 数据结构：[{ name, window: [mk1,mk2,mk3], month_labels: [label1,label2,label3] }]
+// 存储在 appData._promoted 中，随数据一起同步到云端
+function getPromotedEmployees() {
+  if (!appData._promoted) appData._promoted = [];
+  return appData._promoted;
+}
+
+function setPromotedEmployees(list) {
+  appData._promoted = list;
+}
+
+// 检查某员工是否已晋升
+function isPromoted(name) {
+  return getPromotedEmployees().some(p => p.name === name);
+}
+
 // ===================== 考核逻辑 =====================
 function getRankedMonthData(monthKey) {
   const mData = appData[monthKey];
@@ -915,18 +939,74 @@ function renderOverview() {
   const employees = getAllEmployees();
   const container = document.getElementById('cards-container');
   
-  // 按升职进度排序
-  const sorted = employees.map(name => ({ name, progress: getBestProgress(name) }))
+  // 分离已晋升和未晋升员工
+  const promoted = getPromotedEmployees();
+  const promotedNames = new Set(promoted.map(p => p.name));
+  const activeEmployees = employees.filter(n => !promotedNames.has(n));
+  
+  // 未晋升员工按升职进度排序
+  const sortedActive = activeEmployees.map(name => ({ name, progress: getBestProgress(name) }))
     .sort((a, b) => b.progress.pct - a.progress.pct || b.progress.qualified - a.progress.qualified);
   
   container.innerHTML = '';
   
-  sorted.forEach(({ name, progress }) => {
+  // ===== 1. 渲染已晋升员工卡片（固定在最前） =====
+  promoted.forEach(pInfo => {
+    const name = pInfo.name;
+    const frozenMonths = pInfo.window || getSortedMonths().slice(-3);
+    const frozenLabels = pInfo.month_labels || frozenMonths.map(mk => getCleanLabel(mk));
+    
     const card = document.createElement('div');
-    card.className = 'person-card' + (progress.isReady ? ' promo-ready' : progress.isClose ? ' promo-close' : '');
+    card.className = 'person-card promo-ready';
+    card.style.background = 'linear-gradient(135deg, #fff8e1 0%, #fff3cd 100%)';
+    card.style.borderColor = '#f39c12';
+    
+    let monthChipsHTML = '';
+    frozenMonths.forEach((mk, idx) => {
+      const cr = checkCriteria(name, mk);
+      const label = frozenLabels[idx] || getCleanLabel(mk);
+      if (!cr) {
+        monthChipsHTML += `<div class="month-chip chip-na"><div class="m-label">${label}</div><div class="m-score" style="color:#bbb">-</div><div class="m-detail">无数据</div></div>`;
+      } else {
+        const chipClass = cr.metCount >= 2 ? 'chip-full' : cr.metCount === 1 ? 'chip-partial' : 'chip-none';
+        const icons = [cr.c1?'✅':'❌', cr.c2?'✅':'❌', cr.c3?'✅':'❌'].join('');
+        monthChipsHTML += `<div class="month-chip ${chipClass}">
+          <div class="m-label">${label}</div>
+          <div class="m-score" style="color:${cr.metCount>=2?'#1d6a47':cr.metCount===1?'#784212':'#922b21'}">${cr.metCount}/3</div>
+          <div class="m-detail">${icons}</div>
+          <div class="m-detail" style="font-size:9px">第${cr.rank}名</div>
+        </div>`;
+      }
+    });
+    
+    card.innerHTML = `
+      <div class="card-header">
+        <div class="card-name">${name}</div>
+        <span class="card-badge badge-ready">🏆 已晋升</span>
+      </div>
+      <div class="month-row">${monthChipsHTML}</div>
+      <div class="promo-progress-wrap">
+        <div class="promo-progress-label">
+          <span>升职进度</span>
+          <span style="font-weight:700;color:#27ae60">3/3 月达标 (100%)</span>
+        </div>
+        <div class="promo-bar-bg">
+          <div class="promo-bar-fill" style="width:100%"></div>
+        </div>
+      </div>
+      <div class="gap-hints" style="margin-top:8px;background:#d5f5e3;padding:8px;border-radius:6px;font-size:11px;color:#1d6a47;border-left:3px solid #27ae60;">🎉 恭喜！该员工已成功达成晋升条件，数据已冻结。</div>
+    `;
+    
+    container.appendChild(card);
+  });
+  
+  // ===== 2. 渲染未晋升员工卡片 =====
+  sortedActive.forEach(({ name, progress }) => {
+    const card = document.createElement('div');
+    card.className = 'person-card' + (progress.isClose ? ' promo-close' : '');
     
     const badgeClass = progress.isReady ? 'badge-ready' : progress.isClose ? 'badge-close' : 'badge-progress';
-    const badgeText = progress.isReady ? '🏆 达标升职' : progress.isClose ? '🔥 冲刺中' : '📈 进行中';
+    const badgeText = progress.isClose ? '🔥 冲刺中' : '📈 进行中';
     
     // 月份行（chip 标签）—— 只显示最近3个月
     const allMonths = getSortedMonths();
@@ -954,30 +1034,26 @@ function renderOverview() {
     // 进度条颜色
     const barClass = progress.pct >= 80 ? '' : progress.pct >= 40 ? ' mid' : ' low';
     
-    // ===== 差距提示（新逻辑） =====
+    // ===== 差距提示 =====
     const curMonthKey = getCurrentMonthKey();
     const winMonths = getLatestWindow();
     let gapHTML = '';
 
     const curIdx = winMonths.indexOf(curMonthKey);
 
-    // 计算窗口内当前月之前已达标的月数
     let preQualified = 0;
     for (let i = 0; i < curIdx; i++) {
       const cr = checkCriteria(name, winMonths[i]);
       if (cr && cr.metCount >= 2) preQualified++;
     }
 
-    // 当前月是否有数据及达标情况
     const curCr = curIdx >= 0 ? checkCriteria(name, curMonthKey) : null;
     const curPassed = curCr && curCr.metCount >= 2;
 
-    // --- 情况1：当月已达标 → 鼓励保持到月底 ---
     if (curCr && curPassed) {
       gapHTML += `<div style="margin-top:4px;">🎉 本月截至目前已达标，继续保持到月底！</div>`;
     }
 
-    // --- 情况2：当月有数据但未达标 → 提示具体差距 ---
     if (curCr && !curPassed) {
       const gaps = [];
       const ranked = getRankedMonthData(curMonthKey);
@@ -995,7 +1071,6 @@ function renderOverview() {
       }
     }
 
-    // --- 情况3：当前窗口无望 → 个性化未来努力方向 ---
     const afterCount = curIdx >= 0 ? (winMonths.length - curIdx - 1) : 0;
     const maxPossible = preQualified + (curIdx >= 0 ? 1 : 0) + afterCount;
     if (maxPossible < 3) {
@@ -1240,6 +1315,15 @@ function saveEditForm() {
     if (!empName) return;
   }
   
+  // 已晋升员工只能编辑其晋升窗口内的月份
+  if (isPromoted(empName)) {
+    const pInfo = getPromotedEmployees().find(p => p.name === empName);
+    if (pInfo && !pInfo.window.includes(mk)) {
+      alert(`员工 【${empName}】 已晋升，数据已冻结，无法编辑其他月份数据。`);
+      return;
+    }
+  }
+  
   const rate = parseFloat(document.getElementById('ef_rate').value);
   const avgNew = parseInt(document.getElementById('ef_avgNew').value);
   const total = parseInt(document.getElementById('ef_total').value);
@@ -1309,9 +1393,10 @@ function renderEditPreview() {
         <thead><tr><th>排名</th><th>姓名</th><th>转换率</th><th>新客均值</th><th>总业绩</th><th>操作</th></tr></thead>
         <tbody>`;
     emps.forEach(emp => {
-      html += `<tr>
+      const promoted = isPromoted(emp.name);
+      html += `<tr${promoted ? ' style="background:#fff8e1;"' : ''}>
         <td>${emp.rank}</td>
-        <td>${emp.name}</td>
+        <td>${promoted ? '🏆 ' : ''}${emp.name}</td>
         <td>${emp.rate}%</td>
         <td>${emp.avgNew}</td>
         <td>${emp.total.toLocaleString()}</td>
@@ -1340,6 +1425,10 @@ function quickEdit(mk, empName) {
 
 // 从预览表格删除某员工（所有月份）
 function deleteEmployeeFromAll(empName) {
+  if (isPromoted(empName)) {
+    alert(`员工 【${empName}】 已晋升，无法删除。如需撤回晋升，请联系管理员。`);
+    return;
+  }
   if (!confirm(`确定要删除员工 【${empName}】 吗？\n该员工在所有月份的数据将被清除，此操作不可撤销。`)) return;
   Object.keys(appData).forEach(mk => {
     if (appData[mk].employees) {
@@ -1357,6 +1446,10 @@ function deleteEmployeeFromAll(empName) {
 function deleteEmployee() {
   const empName = document.getElementById('editEmployee').value;
   if (!empName || empName === '__new__') { alert('请先选择要删除的员工'); return; }
+  if (isPromoted(empName)) {
+    alert(`员工 【${empName}】 已晋升，无法删除。如需撤回晋升，请联系管理员。`);
+    return;
+  }
   if (!confirm(`确定要删除员工 【${empName}】 吗？\n该员工在所有月份的数据将被清除，此操作不可撤销。`)) return;
   Object.keys(appData).forEach(mk => {
     if (appData[mk].employees) {
@@ -1386,6 +1479,49 @@ function showToast(msg, color) {
   }
   document.body.appendChild(t);
   setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 400); }, 2500);
+}
+
+// 确认晋升：将当前选中员工标记为已晋升
+function confirmPromote() {
+  const empName = document.getElementById('editEmployee').value;
+  if (!empName || empName === '__new__') { alert('请先选择要确认晋升的员工'); return; }
+  if (isPromoted(empName)) { alert(`员工 【${empName}】 已经是已晋升状态。`); return; }
+  
+  // 检查是否达标
+  const progress = getBestProgress(empName);
+  if (!progress.isReady) {
+    alert(`员工 【${empName}】 尚未达到晋升条件（当前最佳窗口达标 ${progress.qualified}/3 月），无法确认晋升。`);
+    return;
+  }
+  
+  if (!confirm(`确定要确认 【${empName}】 晋升吗？\n\n确认后：\n• 该员工将排在最前面并显示为"已晋升"\n• 其数据将被冻结（仅可编辑晋升窗口内的月份）\n• 后续新月份将不再更新该员工的数据\n\n此操作可以通过"撤回晋升"撤销。`)) return;
+  
+  const promoted = getPromotedEmployees();
+  const win = progress.bestWindow || getLatestWindow();
+  const monthLabels = win.map(mk => getCleanLabel(mk));
+  promoted.push({ name: empName, window: win, month_labels: monthLabels });
+  setPromotedEmployees(promoted);
+  
+  renderEditPreview();
+  renderAll();
+  showToast(`🏆 员工 ${empName} 已确认晋升！`, '#8e44ad');
+}
+
+// 撤回晋升
+function revokePromotion() {
+  const empName = document.getElementById('editEmployee').value;
+  if (!empName || empName === '__new__') { alert('请先选择要撤回晋升的员工'); return; }
+  if (!isPromoted(empName)) { alert(`员工 【${empName}】 不是已晋升状态。`); return; }
+  
+  if (!confirm(`确定要撤回 【${empName}】 的晋升确认吗？\n\n撤回后该员工将恢复为正常考核状态。`)) return;
+  
+  const promoted = getPromotedEmployees().filter(p => p.name !== empName);
+  setPromotedEmployees(promoted);
+  
+  populateEmployeesForMonth();
+  renderEditPreview();
+  renderAll();
+  showToast(`↩️ 已撤回 ${empName} 的晋升确认`, '#95a5a6');
 }
 
 // ===================== 管理员密码 =====================
