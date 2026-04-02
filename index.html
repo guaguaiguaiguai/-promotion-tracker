@@ -382,11 +382,6 @@
 </header>
 
 <div class="toolbar">
-  <label>当前窗口月份：</label>
-  <select id="windowSelect" onchange="renderAll()">
-    <!-- 动态生成 -->
-  </select>
-  <span style="font-size:12px;color:#888;">（考核窗口为连续三个月）</span>
   <div style="flex:1"></div>
   <button class="btn btn-primary" onclick="switchView('overview')">📊 升职总览</button>
   <button class="btn btn-warn" onclick="switchView('monthly')">📅 月度明细</button>
@@ -907,39 +902,12 @@ function getMonthChipLabel(mk, posInWindow, isLatestWindow) {
 }
 
 function updateWindowSelect() {
-  const sel = document.getElementById('windowSelect');
-  const windows = getWindows();
-  const months = getSortedMonths();
-  const currentVal = sel.value;
-  sel.innerHTML = '';
-  
-  windows.forEach((win, winIdx) => {
-    const isLatest = winIdx === windows.length - 1;
-    const labels = win.map((mk, pos) => getMonthChipLabel(mk, pos, isLatest));
-    const opt = document.createElement('option');
-    opt.value = win.join(',');
-    opt.text = labels.join(' → ');
-    sel.appendChild(opt);
-  });
-  
-  if (sel.options.length === 0) {
-    months.forEach(mk => {
-      const opt = document.createElement('option');
-      opt.value = mk;
-      opt.text = getCleanLabel(mk);
-      sel.appendChild(opt);
-    });
-  }
-  
-  if (currentVal) {
-    for (let o of sel.options) { if (o.value === currentVal) { sel.value = currentVal; break; } }
-  }
+  // windowSelect 已移除，此函数保留为空以避免调用报错
 }
 
 function getSelectedWindow() {
-  const val = document.getElementById('windowSelect').value;
-  if (!val) return getWindows()[0] || getSortedMonths();
-  return val.split(',');
+  // 始终返回最新窗口
+  return getWindows()[getWindows().length - 1] || getSortedMonths().slice(-3);
 }
 
 // 渲染升职总览
@@ -960,11 +928,12 @@ function renderOverview() {
     const badgeClass = progress.isReady ? 'badge-ready' : progress.isClose ? 'badge-close' : 'badge-progress';
     const badgeText = progress.isReady ? '🏆 达标升职' : progress.isClose ? '🔥 冲刺中' : '📈 进行中';
     
-    // 月份行（chip 标签）
-    const months = getSortedMonths();
+    // 月份行（chip 标签）—— 只显示最近3个月
+    const allMonths = getSortedMonths();
+    const recentMonths = allMonths.slice(-3);
     const latestWin = getLatestWindow();
     let monthChipsHTML = '';
-    months.forEach(mk => {
+    recentMonths.forEach(mk => {
       const cr = checkCriteria(name, mk);
       const posInLatest = latestWin.indexOf(mk);
       const label = getMonthChipLabel(mk, posInLatest, posInLatest !== -1);
