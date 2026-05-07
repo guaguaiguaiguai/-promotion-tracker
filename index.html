@@ -478,366 +478,291 @@ const STORAGE_KEY = 'sales_promotion_data_v2';
 
 // 初始数据（从图片中录入）
 /*__DATA_START__*/ const defaultData = {
-    "2026-01": {
-      "month_label": "1月",
-      "employees": [
-        {
-          "name": "邱俊鹏",
-          "rate": 4.7,
-          "total": 92946,
-          "avgNew": 219
-        },
-        {
-          "name": "吕仟民",
-          "rate": 3,
-          "total": 92046,
-          "avgNew": 132
-        },
-        {
-          "name": "关顺杰",
-          "rate": 4.9,
-          "total": 85126,
-          "avgNew": 301
-        },
-        {
-          "name": "邓小江",
-          "rate": 7.6,
-          "total": 82513,
-          "avgNew": 270
-        },
-        {
-          "name": "何作强",
-          "rate": 2.8,
-          "total": 79252,
-          "avgNew": 170
-        },
-        {
-          "name": "曹羽寒",
-          "rate": 3.8,
-          "total": 77970,
-          "avgNew": 190
-        },
-        {
-          "name": "张四维",
-          "rate": 7.1,
-          "total": 68529,
-          "avgNew": 149
-        },
-        {
-          "name": "岳洋",
-          "rate": 4.1,
-          "total": 60748,
-          "avgNew": 106
-        },
-        {
-          "name": "杨天骏",
-          "rate": 3.6,
-          "total": 47570,
-          "avgNew": 104
-        },
-        {
-          "name": "刘佳鑫",
-          "rate": 5.2,
-          "total": 40715,
-          "avgNew": 150
-        },
-        {
-          "name": "苏子涵",
-          "rate": 2.9,
-          "total": 20019,
-          "avgNew": 61
-        },
-        {
-          "name": "蔡云峰",
-          "rate": 10.4,
-          "total": 150046,
-          "avgNew": 369
-        },
-        {
-          "name": "李天辉",
-          "rate": 6.2,
-          "total": 73083,
-          "avgNew": 268
-        }
-      ]
-    },
-    "2026-02": {
-      "month_label": "2月",
-      "employees": [
-        {
-          "name": "吕仟民",
-          "rate": 8.2,
-          "total": 91397,
-          "avgNew": 275
-        },
-        {
-          "name": "邓小江",
-          "rate": 6.7,
-          "total": 73461,
-          "avgNew": 386
-        },
-        {
-          "name": "张四维",
-          "rate": 6.4,
-          "total": 67657,
-          "avgNew": 307
-        },
-        {
-          "name": "何作强",
-          "rate": 1.8,
-          "total": 62610,
-          "avgNew": 156
-        },
-        {
-          "name": "邱俊鹏",
-          "rate": 4.4,
-          "total": 54860,
-          "avgNew": 158
-        },
-        {
-          "name": "刘佳鑫",
-          "rate": 8.3,
-          "total": 46002,
-          "avgNew": 237
-        },
-        {
-          "name": "岳洋",
-          "rate": 5.2,
-          "total": 45313,
-          "avgNew": 249
-        },
-        {
-          "name": "苏子涵",
-          "rate": 7.9,
-          "total": 27387,
-          "avgNew": 206
-        },
-        {
-          "name": "关顺杰",
-          "rate": 3.4,
-          "total": 21486,
-          "avgNew": 81
-        },
-        {
-          "name": "杨天骏",
-          "rate": 0.7,
-          "total": 10046,
-          "avgNew": 61
-        },
-        {
-          "name": "曹羽寒",
-          "rate": 3.4,
-          "total": -7253,
-          "avgNew": 68
-        },
-        {
-          "name": "蔡云峰",
-          "rate": 5.5,
-          "total": 164790,
-          "avgNew": 449
-        },
-        {
-          "name": "李天辉",
-          "rate": 5.6,
-          "total": 67053,
-          "avgNew": 395
-        }
-      ]
-    },
-    "2026-03": {
-      "month_label": "3月（截止23日）",
-      "employees": [
-        {
-          "name": "邱俊鹏",
-          "rate": 6.2,
-          "total": 123714,
-          "avgNew": 180
-        },
-        {
-          "name": "岳洋",
-          "rate": 3.8,
-          "total": 67969,
-          "avgNew": 86
-        },
-        {
-          "name": "吕仟民",
-          "rate": 4.6,
-          "total": 94397,
-          "avgNew": 282
-        },
-        {
-          "name": "刘佳鑫",
-          "rate": 10.1,
-          "total": 57262,
-          "avgNew": 324
-        },
-        {
-          "name": "张四维",
-          "rate": 6.1,
-          "total": 50134,
-          "avgNew": 143
-        },
-        {
-          "name": "关顺杰",
-          "rate": 3.3,
-          "total": 28668,
-          "avgNew": 84
-        },
-        {
-          "name": "何作强",
-          "rate": 6.9,
-          "total": 62820,
-          "avgNew": 411
-        },
-        {
-          "name": "邓小江",
-          "rate": 6.3,
-          "total": 16469,
-          "avgNew": 84
-        },
-        {
-          "name": "曹羽寒",
-          "rate": 3.8,
-          "total": 12248,
-          "avgNew": 10
-        },
-        {
-          "name": "杨天骏",
-          "rate": 4.1,
-          "total": 19860,
-          "avgNew": 122
-        },
-        {
-          "name": "苏子涵",
-          "rate": 6.3,
-          "total": 10775,
-          "avgNew": 86
-        },
-        {
-          "name": "蔡云峰",
-          "rate": 12.8,
-          "total": 88614,
-          "avgNew": 302
-        },
-        {
-          "name": "李天辉",
-          "rate": 5.7,
-          "total": 132886,
-          "avgNew": 608
-        }
-      ]
-    },
-    "2026-04": {
-      "month_label": "4月",
-      "employees": [
-        {
-          "name": "何作强",
-          "rank": 8,
-          "rate": 6.1,
-          "total": 3675,
-          "avgNew": 85
-        },
-        {
-          "name": "关顺杰",
-          "rank": 5,
-          "rate": 14.8,
-          "total": 6814,
-          "avgNew": 191
-        },
-        {
-          "name": "刘佳鑫",
-          "rank": 3,
-          "rate": 0,
-          "total": 16023,
-          "avgNew": 0
-        },
-        {
-          "name": "吕仟民",
-          "rank": 11,
-          "rate": 0,
-          "total": 1539,
-          "avgNew": 0
-        },
-        {
-          "name": "岳洋",
-          "rank": 3,
-          "rate": 5.7,
-          "total": 18389,
-          "avgNew": 490
-        },
-        {
-          "name": "张四维",
-          "rank": 1,
-          "rate": 10.3,
-          "total": 24927,
-          "avgNew": 842
-        },
-        {
-          "name": "曹羽寒",
-          "rank": 12,
-          "rate": 3.2,
-          "total": 1410,
-          "avgNew": 45
-        },
-        {
-          "name": "杨天骏",
-          "rank": 10,
-          "rate": 6.1,
-          "total": 2270,
-          "avgNew": 69
-        },
-        {
-          "name": "苏子涵",
-          "rank": 13,
-          "rate": 3.6,
-          "total": 1210,
-          "avgNew": 41
-        },
-        {
-          "name": "邓小江",
-          "rank": 2,
-          "rate": 13,
-          "total": 22327,
-          "avgNew": 633
-        },
-        {
-          "name": "邱俊鹏",
-          "rank": 7,
-          "rate": 10.7,
-          "total": 3872,
-          "avgNew": 126
-        }
-      ]
-    },
-    "_promoted": [
+  "2026-01": {
+    "month_label": "1月",
+    "employees": [
+      {
+        "name": "邱俊鹏",
+        "rate": 4.7,
+        "total": 92946,
+        "avgNew": 219
+      },
+      {
+        "name": "吕仟民",
+        "rate": 3,
+        "total": 92046,
+        "avgNew": 132
+      },
+      {
+        "name": "关顺杰",
+        "rate": 4.9,
+        "total": 85126,
+        "avgNew": 301
+      },
+      {
+        "name": "邓小江",
+        "rate": 7.6,
+        "total": 82513,
+        "avgNew": 270
+      },
+      {
+        "name": "何作强",
+        "rate": 2.8,
+        "total": 79252,
+        "avgNew": 170
+      },
+      {
+        "name": "张四维",
+        "rate": 7.1,
+        "total": 68529,
+        "avgNew": 149
+      },
+      {
+        "name": "岳洋",
+        "rate": 4.1,
+        "total": 60748,
+        "avgNew": 106
+      },
+      {
+        "name": "刘佳鑫",
+        "rate": 5.2,
+        "total": 40715,
+        "avgNew": 150
+      },
       {
         "name": "蔡云峰",
-        "window": [
-          "2026-01",
-          "2026-02",
-          "2026-03"
-        ],
-        "month_labels": [
-          "1月",
-          "2月",
-          "3月"
-        ]
+        "rate": 10.4,
+        "total": 150046,
+        "avgNew": 369
       },
       {
         "name": "李天辉",
-        "window": [
-          "2026-01",
-          "2026-02",
-          "2026-03"
-        ],
-        "month_labels": [
-          "1月",
-          "2月",
-          "3月"
-        ]
+        "rate": 6.2,
+        "total": 73083,
+        "avgNew": 268
       }
     ]
-  }; /*__DATA_END__*/
+  },
+  "2026-02": {
+    "month_label": "2月",
+    "employees": [
+      {
+        "name": "吕仟民",
+        "rate": 8.2,
+        "total": 91397,
+        "avgNew": 275
+      },
+      {
+        "name": "邓小江",
+        "rate": 6.7,
+        "total": 73461,
+        "avgNew": 386
+      },
+      {
+        "name": "张四维",
+        "rate": 6.4,
+        "total": 67657,
+        "avgNew": 307
+      },
+      {
+        "name": "何作强",
+        "rate": 1.8,
+        "total": 62610,
+        "avgNew": 156
+      },
+      {
+        "name": "邱俊鹏",
+        "rate": 4.4,
+        "total": 54860,
+        "avgNew": 158
+      },
+      {
+        "name": "刘佳鑫",
+        "rate": 8.3,
+        "total": 46002,
+        "avgNew": 237
+      },
+      {
+        "name": "岳洋",
+        "rate": 5.2,
+        "total": 45313,
+        "avgNew": 249
+      },
+      {
+        "name": "关顺杰",
+        "rate": 3.4,
+        "total": 21486,
+        "avgNew": 81
+      },
+      {
+        "name": "蔡云峰",
+        "rate": 5.5,
+        "total": 164790,
+        "avgNew": 449
+      },
+      {
+        "name": "李天辉",
+        "rate": 5.6,
+        "total": 67053,
+        "avgNew": 395
+      }
+    ]
+  },
+  "2026-03": {
+    "month_label": "3月（截止23日）",
+    "employees": [
+      {
+        "name": "邱俊鹏",
+        "rate": 6.2,
+        "total": 123714,
+        "avgNew": 180
+      },
+      {
+        "name": "岳洋",
+        "rate": 3.8,
+        "total": 67969,
+        "avgNew": 86
+      },
+      {
+        "name": "吕仟民",
+        "rate": 4.6,
+        "total": 94397,
+        "avgNew": 282
+      },
+      {
+        "name": "刘佳鑫",
+        "rate": 10.1,
+        "total": 57262,
+        "avgNew": 324
+      },
+      {
+        "name": "张四维",
+        "rate": 6.1,
+        "total": 50134,
+        "avgNew": 143
+      },
+      {
+        "name": "关顺杰",
+        "rate": 3.3,
+        "total": 28668,
+        "avgNew": 84
+      },
+      {
+        "name": "何作强",
+        "rate": 6.9,
+        "total": 62820,
+        "avgNew": 411
+      },
+      {
+        "name": "邓小江",
+        "rate": 6.3,
+        "total": 16469,
+        "avgNew": 84
+      },
+      {
+        "name": "蔡云峰",
+        "rate": 12.8,
+        "total": 88614,
+        "avgNew": 302
+      },
+      {
+        "name": "李天辉",
+        "rate": 5.7,
+        "total": 132886,
+        "avgNew": 608
+      }
+    ]
+  },
+  "2026-04": {
+    "month_label": "4月",
+    "employees": [
+      {
+        "name": "何作强",
+        "rank": 5,
+        "rate": 6.8,
+        "total": 63044,
+        "avgNew": 386
+      },
+      {
+        "name": "关顺杰",
+        "rank": 14,
+        "rate": 5.5,
+        "total": 26901,
+        "avgNew": 155
+      },
+      {
+        "name": "刘佳鑫",
+        "rank": 8,
+        "rate": 6,
+        "total": 49435,
+        "avgNew": 166
+      },
+      {
+        "name": "吕仟民",
+        "rank": 2,
+        "rate": 11.4,
+        "total": 116078,
+        "avgNew": 547
+      },
+      {
+        "name": "岳洋",
+        "rank": 6,
+        "rate": 3.9,
+        "total": 62306,
+        "avgNew": 155
+      },
+      {
+        "name": "张四维",
+        "rank": 1,
+        "rate": 6,
+        "total": 123830,
+        "avgNew": 516
+      },
+      {
+        "name": "邓小江",
+        "rank": 4,
+        "rate": 7.2,
+        "total": 68295,
+        "avgNew": 345
+      },
+      {
+        "name": "邱俊鹏",
+        "rank": 10,
+        "rate": 6.3,
+        "total": 43292,
+        "avgNew": 113
+      }
+    ]
+  },
+  "_promoted": [
+    {
+      "name": "蔡云峰",
+      "window": [
+        "2026-01",
+        "2026-02",
+        "2026-03"
+      ],
+      "month_labels": [
+        "1月",
+        "2月",
+        "3月"
+      ]
+    },
+    {
+      "name": "李天辉",
+      "window": [
+        "2026-01",
+        "2026-02",
+        "2026-03"
+      ],
+      "month_labels": [
+        "1月",
+        "2月",
+        "3月"
+      ]
+    }
+  ]
+}; /*__DATA_END__*/
 
 // ===================== Supabase 配置 =====================
 const SUPABASE_URL = 'https://fgxqcfrqjdrmexzifrlb.supabase.co';
