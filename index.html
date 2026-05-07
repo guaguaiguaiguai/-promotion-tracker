@@ -1618,17 +1618,21 @@ function confirmPromote() {
   if (!empName || empName === '__new__') { alert('请先选择要确认晋升的员工'); return; }
   if (isPromoted(empName)) { alert(`员工 【${empName}】 已经是已晋升状态。`); return; }
   
-  // 检查是否达标
+  // 检查是否达标（支持历史连续达标：当前月无数据时也能晋升）
   const progress = getBestProgress(empName);
-  if (!progress.isReady) {
-    alert(`员工 【${empName}】 尚未达到晋升条件（当前最佳窗口达标 ${progress.qualified}/3 月），无法确认晋升。`);
+  const historyWin = checkHistoryPromotion(empName);
+  const canPromote = progress.isReady || historyWin !== null;
+  
+  if (!canPromote) {
+    const reason = progress.isComplete ? progress.qualified + '/3' : '数据不完整';
+    alert(`员工 【${empName}】 尚未达到晋升条件（当前达标 ${reason}），无法确认晋升。`);
     return;
   }
   
   if (!confirm(`确定要确认 【${empName}】 晋升吗？\n\n确认后：\n• 该员工将排在最前面并显示为"已晋升"\n• 其数据将被冻结（仅可编辑晋升窗口内的月份）\n• 后续新月份将不再更新该员工的数据\n\n此操作可以通过"撤回晋升"撤销。`)) return;
   
   const promoted = getPromotedEmployees();
-  const win = progress.bestWindow || getLatestWindow();
+  const win = progress.isReady ? (progress.bestWindow || getLatestWindow()) : historyWin;
   const monthLabels = win.map(mk => getCleanLabel(mk));
   promoted.push({ name: empName, window: win, month_labels: monthLabels });
   setPromotedEmployees(promoted);
@@ -1636,6 +1640,23 @@ function confirmPromote() {
   renderEditPreview();
   renderAll();
   showToast(`🏆 员工 ${empName} 已确认晋升！`, '#8e44ad');
+}
+
+// 检查员工是否有历史连续3个月达标记录（用于当前月无数据时的晋升判断）
+// 返回晋升窗口数组，不满足则返回 null
+function checkHistoryPromotion(empName) {
+  const allMonths = getSortedMonths();
+  if (allMonths.length < 3) return null;
+  // 从后往前找任意连续3个月都达标的记录
+  for (let i = allMonths.length - 1; i >= 2; i--) {
+    const c1 = checkCriteria(empName, allMonths[i]);
+    const c2 = checkCriteria(empName, allMonths[i-1]);
+    const c3 = checkCriteria(empName, allMonths[i-2]);
+    if (c1 && c2 && c3 && c1.metCount >= 2 && c2.metCount >= 2 && c3.metCount >= 2) {
+      return [allMonths[i-2], allMonths[i-1], allMonths[i]];
+    }
+  }
+  return null;
 }
 
 // 撤回晋升
